@@ -87,7 +87,28 @@ async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
         await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
         _LOGGER.info("FreezeKeeper: %s nach www/ deployed", _CARD_JS)
 
+    # Register via frontend extra module URLs
     add_extra_js_url(hass, _CARD_URL)
+
+    # Also register as Lovelace storage resource so it survives page reload
+    await _register_lovelace_resource(hass, _CARD_URL)
+
+
+async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    try:
+        ll = hass.data.get("lovelace")
+        if ll is None:
+            return
+        resources = ll.get("resources")
+        if resources is None or not hasattr(resources, "async_get_info"):
+            return
+        items = await resources.async_get_info()
+        if any(item.get("url") == url for item in items):
+            return
+        await resources.async_create_item({"res_type": "module", "url": url})
+        _LOGGER.info("FreezeKeeper: Lovelace-Ressource registriert: %s", url)
+    except Exception as exc:
+        _LOGGER.debug("FreezeKeeper: Lovelace-Ressource konnte nicht automatisch registriert werden: %s", exc)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
