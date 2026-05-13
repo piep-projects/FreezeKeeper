@@ -112,7 +112,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
             if resources is not None and hasattr(resources, "async_create_item"):
                 items = await resources.async_get_info()
                 if not any(item.get("url") == url for item in items):
-                    await resources.async_create_item({"res_type": "module", "url": url})
+                    await resources.async_create_item({"type": "module", "url": url})
                     _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
                 else:
                     _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden")
@@ -128,7 +128,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
         if any(item.get("url") == url for item in items):
             _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden")
             return
-        items.append({"id": uuid.uuid4().hex, "res_type": "module", "url": url})
+        items.append({"id": uuid.uuid4().hex, "type": "module", "url": url})
         await store.async_save(data)
         _LOGGER.warning("FreezeKeeper: Lovelace-Ressource in Storage geschrieben (wirkt nach HA-Neustart): %s", url)
     except Exception as exc:
