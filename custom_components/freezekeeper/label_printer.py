@@ -15,13 +15,18 @@ _LOGGER = logging.getLogger(__name__)
 LABEL_WIDTH = 696
 PADDING = 18
 
+_BUNDLED_BOLD    = os.path.join(os.path.dirname(__file__), "DejaVuSans-Bold.ttf")
+_BUNDLED_REGULAR = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
+
 _FONT_PATHS_BOLD = [
+    _BUNDLED_BOLD,
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
     "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
     "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
 ]
 _FONT_PATHS_REGULAR = [
+    _BUNDLED_REGULAR,
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
     "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
