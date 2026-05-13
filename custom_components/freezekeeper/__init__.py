@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import shutil
 import socket
@@ -71,6 +72,7 @@ _CARD_JS    = "freezekeeper-card.js"
 _PANEL_HTML = "freezekeeper-panel.html"
 _CARD_URL   = f"/local/{_CARD_JS}"
 _PANEL_URL  = "/freezekeeper"
+_VERSION    = json.loads((Path(__file__).parent / "manifest.json").read_text()).get("version", "0")
 
 
 async def _deploy_static_files(hass: HomeAssistant) -> None:
@@ -111,7 +113,7 @@ def _register_panel(hass: HomeAssistant) -> None:
             sidebar_title="FreezeKeeper",
             sidebar_icon="mdi:snowflake",
             frontend_url_path="freezekeeper",
-            config={"url": f"/local/{_PANEL_HTML}"},
+            config={"url": f"/local/{_PANEL_HTML}?v={_VERSION}"},
             require_admin=False,
         )
         _LOGGER.warning("FreezeKeeper: Panel /freezekeeper registriert")
