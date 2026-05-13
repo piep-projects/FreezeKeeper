@@ -95,20 +95,36 @@ async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
 
 
 async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    import uuid
+    from homeassistant.helpers.storage import Store
+
+    # Try via live lovelace component (takes effect immediately)
     try:
         ll = hass.data.get("lovelace")
-        if ll is None:
-            return
-        resources = ll.get("resources")
-        if resources is None or not hasattr(resources, "async_get_info"):
-            return
-        items = await resources.async_get_info()
-        if any(item.get("url") == url for item in items):
-            return
-        await resources.async_create_item({"res_type": "module", "url": url})
-        _LOGGER.info("FreezeKeeper: Lovelace-Ressource registriert: %s", url)
+        if ll is not None:
+            resources = ll.get("resources")
+            if resources is not None and hasattr(resources, "async_create_item"):
+                items = await resources.async_get_info()
+                if not any(item.get("url") == url for item in items):
+                    await resources.async_create_item({"res_type": "module", "url": url})
+                    _LOGGER.info("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
+                return
     except Exception as exc:
-        _LOGGER.debug("FreezeKeeper: Lovelace-Ressource konnte nicht automatisch registriert werden: %s", exc)
+        _LOGGER.debug("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
+
+    # Fallback: write directly to storage (takes effect after next HA restart)
+    try:
+        store = Store(hass, 1, "lovelace_resources")
+        data = await store.async_load() or {"items": []}
+        items = data.setdefault("items", [])
+        if any(item.get("url") == url for item in items):
+            _LOGGER.debug("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden")
+            return
+        items.append({"id": uuid.uuid4().hex, "res_type": "module", "url": url})
+        await store.async_save(data)
+        _LOGGER.info("FreezeKeeper: Lovelace-Ressource in Storage geschrieben (wirkt nach HA-Neustart): %s", url)
+    except Exception as exc:
+        _LOGGER.warning("FreezeKeeper: Lovelace-Ressource konnte nicht registriert werden: %s", exc)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
