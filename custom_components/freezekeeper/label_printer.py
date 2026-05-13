@@ -157,7 +157,7 @@ def build_label_image(
     draw.text((198, table_y + 6),  "Port.",        fill="black", font=font_hdr)
     draw.text((288, table_y + 6),  "Kategorie",   fill="black", font=font_hdr)
 
-    draw.text((26,  table_y + 44), entry.frozen_date.strftime("%d.%m.%Y"), fill="black", font=font_val)
+    draw.text((26,  table_y + 44), entry.frozen_date.strftime("%d.%m.%y"), fill="black", font=font_val)
     draw.text((198, table_y + 44), str(entry.portions),                    fill="black", font=font_val)
     draw.text((288, table_y + 44), category_name,                          fill="black", font=font_val)
 
