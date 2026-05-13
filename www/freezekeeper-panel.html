@@ -446,7 +446,8 @@ function _onSubmit(e){
 // ── Navigation ────────────────────────────────────────────────────────────
 function _toHA(){
   try{
-    parent.history.back();
+    parent.history.pushState(null,'','/lovelace');
+    parent.dispatchEvent(new CustomEvent('location-changed',{bubbles:true,detail:{replace:false}}));
   }catch{
     try{parent.location.href='/lovelace'}catch{location.href='/lovelace'}
   }
