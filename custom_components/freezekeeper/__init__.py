@@ -68,11 +68,11 @@ def _build_webhook_url(hass: HomeAssistant, webhook_id: str, ha_url: str = "") -
     return url
 
 
+_VERSION    = json.loads((Path(__file__).parent / "manifest.json").read_text()).get("version", "0")
 _CARD_JS    = "freezekeeper-card.js"
 _PANEL_HTML = "freezekeeper-panel.html"
-_CARD_URL   = f"/local/{_CARD_JS}"
+_CARD_URL   = f"/local/{_CARD_JS}?v={_VERSION}"
 _PANEL_URL  = "/freezekeeper"
-_VERSION    = json.loads((Path(__file__).parent / "manifest.json").read_text()).get("version", "0")
 
 
 async def _deploy_static_files(hass: HomeAssistant) -> None:
@@ -125,6 +125,8 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
     import uuid
     from homeassistant.helpers.storage import Store
 
+    base = f"/local/{_CARD_JS}"  # match all versions of our card URL
+
     # Try via live lovelace component (takes effect immediately)
     try:
         ll = hass.data.get("lovelace")
@@ -132,12 +134,18 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
             resources = getattr(ll, "resources", None)
             if resources is not None and hasattr(resources, "async_create_item"):
                 items = await resources.async_get_info()
-                if not any(item.get("url") == url for item in items):
-                    # async_create_item expects "res_type" as API input, stores as "type"
-                    await resources.async_create_item({"res_type": "module", "url": url})
-                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
-                else:
-                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden")
+                if any(str(item.get("url", "")).split("?")[0] == base and item.get("url") == url for item in items):
+                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden: %s", url)
+                    return
+                # Remove outdated versions of our resource
+                for item in items:
+                    if str(item.get("url", "")).split("?")[0] == base and item.get("url") != url:
+                        try:
+                            await resources.async_delete_item(item["id"])
+                        except Exception:
+                            pass
+                await resources.async_create_item({"res_type": "module", "url": url})
+                _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
                 return
     except Exception as exc:
         _LOGGER.warning("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
@@ -146,13 +154,17 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
     try:
         store = Store(hass, 1, "lovelace_resources")
         data = await store.async_load() or {"items": []}
-        items = data.setdefault("items", [])
-        if any(item.get("url") == url for item in items):
-            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden")
-            return
-        items.append({"id": uuid.uuid4().hex, "type": "module", "url": url})
-        await store.async_save(data)
-        _LOGGER.warning("FreezeKeeper: Lovelace-Ressource in Storage geschrieben (wirkt nach HA-Neustart): %s", url)
+        # Remove outdated versions, keep only current URL
+        data["items"] = [
+            i for i in data.get("items", [])
+            if str(i.get("url", "")).split("?")[0] != base or i.get("url") == url
+        ]
+        if not any(i.get("url") == url for i in data["items"]):
+            data["items"].append({"id": uuid.uuid4().hex, "type": "module", "url": url})
+            await store.async_save(data)
+            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource in Storage geschrieben: %s", url)
+        else:
+            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden: %s", url)
     except Exception as exc:
         _LOGGER.warning("FreezeKeeper: Lovelace-Ressource konnte nicht registriert werden: %s", exc)
 
