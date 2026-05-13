@@ -96,8 +96,18 @@ function _toId(name){return name.toLowerCase().replace(/[äöüß]/g,c=>({ä:'ae
 
 // ── Auth / API ────────────────────────────────────────────────────────────
 function _token(){
-  try{const t=JSON.parse(localStorage.getItem('hassTokens')||'null');return t?.access_token||null}
-  catch{return null}
+  // Primary: read from HA element in parent window (works in browser + companion app)
+  try{
+    const ha=window.parent.document.querySelector('home-assistant');
+    const tok=ha?.hass?.auth?.data?.access_token;
+    if(tok)return tok;
+  }catch{}
+  // Fallback: localStorage (standard browser session)
+  try{
+    const t=JSON.parse(localStorage.getItem('hassTokens')||'null');
+    if(t?.access_token)return t.access_token;
+  }catch{}
+  return null;
 }
 
 async function _api(method,path,body){
@@ -148,7 +158,15 @@ async function _init(){
 }
 
 async function _load(){
-  _d=await _getSensor();
+  if(!_token()){_authErr();return;}
+  try{
+    _d=await _getSensor();
+  }catch(e){
+    document.getElementById('app').innerHTML=
+      `<div class="errpage"><div>⚠ Ladefehler: ${_esc(e.message)}</div>
+      <button onclick="location.reload()">Neu laden</button></div>`;
+    return;
+  }
   _render();
 }
 
