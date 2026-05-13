@@ -173,7 +173,7 @@ Die FreezeKeeper-Karte erscheint nun im Dashboard.
 
 ## Status
 
-> In Betrieb — v0.2.3
+> In Betrieb — v0.2.5
 
 ---
 
