@@ -67,26 +67,28 @@ def _build_webhook_url(hass: HomeAssistant, webhook_id: str, ha_url: str = "") -
     return url
 
 
-_CARD_JS  = "freezekeeper-card.js"
-_CARD_URL = f"/local/{_CARD_JS}"
+_CARD_JS    = "freezekeeper-card.js"
+_PANEL_HTML = "freezekeeper-panel.html"
+_CARD_URL   = f"/local/{_CARD_JS}"
+_PANEL_URL  = "/freezekeeper"
 
 
-async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
+async def _deploy_static_files(hass: HomeAssistant) -> None:
     from homeassistant.components.frontend import add_extra_js_url
     from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 
-    src = Path(__file__).parent / _CARD_JS
-    if not src.exists():
-        _LOGGER.warning("FreezeKeeper: %s nicht gefunden, Karte wird nicht registriert", _CARD_JS)
-        return
-
     www = Path(hass.config.path("www"))
     www.mkdir(exist_ok=True)
-    dst = www / _CARD_JS
 
-    if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
-        await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
-        _LOGGER.warning("FreezeKeeper: %s nach www/ deployed", _CARD_JS)
+    for fname in (_CARD_JS, _PANEL_HTML):
+        src = Path(__file__).parent / fname
+        if not src.exists():
+            _LOGGER.warning("FreezeKeeper: %s nicht gefunden", fname)
+            continue
+        dst = www / fname
+        if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
+            await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
+            _LOGGER.warning("FreezeKeeper: %s nach www/ deployed", fname)
 
     add_extra_js_url(hass, _CARD_URL)
 
@@ -98,6 +100,23 @@ async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
         async def _on_started(_event) -> None:
             await _register_lovelace_resource(hass, _CARD_URL)
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _on_started)
+
+
+def _register_panel(hass: HomeAssistant) -> None:
+    from homeassistant.components.frontend import async_register_built_in_panel
+    try:
+        async_register_built_in_panel(
+            hass,
+            component_name="iframe",
+            sidebar_title="FreezeKeeper",
+            sidebar_icon="mdi:snowflake",
+            frontend_url_path="freezekeeper",
+            config={"url": f"/local/{_PANEL_HTML}"},
+            require_admin=False,
+        )
+        _LOGGER.warning("FreezeKeeper: Panel /freezekeeper registriert")
+    except ValueError:
+        pass  # already registered (e.g. integration reloaded)
 
 
 async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
@@ -138,9 +157,13 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
-        await _deploy_lovelace_card(hass)
+        await _deploy_static_files(hass)
     except Exception as exc:
-        _LOGGER.warning("FreezeKeeper: Lovelace-Karte konnte nicht deployed werden: %s", exc)
+        _LOGGER.warning("FreezeKeeper: Static files konnten nicht deployed werden: %s", exc)
+    try:
+        _register_panel(hass)
+    except Exception as exc:
+        _LOGGER.warning("FreezeKeeper: Panel konnte nicht registriert werden: %s", exc)
 
     store = FreezeKeeperStore(hass)
     await store.async_load()
@@ -161,6 +184,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     webhook_id: str | None = entry.data.get("webhook_id")
     if webhook_id:
         async_unregister(hass, webhook_id)
+
+    try:
+        from homeassistant.components.frontend import async_remove_panel
+        async_remove_panel(hass, "freezekeeper")
+    except Exception:
+        pass
 
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:

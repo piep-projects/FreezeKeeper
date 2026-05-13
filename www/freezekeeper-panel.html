@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreezeKeeper</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:#111827;color:#f1f5f9;font-family:system-ui,sans-serif;font-size:14px}
+#app{height:100%;display:flex;flex-direction:column}
+.hdr{display:flex;align-items:center;gap:6px;padding:10px 16px;
+  background:#1e293b;border-bottom:1px solid #334155;flex-shrink:0}
+.htitle{flex:1;font-weight:600;font-size:16px}
+.ibtn{background:none;border:none;cursor:pointer;color:#94a3b8;
+  font-size:18px;padding:3px 6px;border-radius:5px;line-height:1}
+.ibtn:hover{background:#334155;color:#f1f5f9}
+.ibtn.sm{font-size:11px}.ibtn.lg{font-size:21px}
+/* table */
+.tw{flex:1;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#0f172a;position:sticky;top:0;z-index:1;padding:0}
+.sh{background:none;border:none;cursor:pointer;text-align:left;padding:5px 8px 1px;
+  font-size:11px;font-weight:600;color:#94a3b8;width:100%;white-space:nowrap}
+.sh:hover{color:#0ea5e9}
+.sf{width:100%;border:none;border-top:1px solid #334155;
+  background:#0f172a;color:#f1f5f9;padding:3px 8px;font-size:11px}
+.sf:focus{outline:none;background:#1e3a5f}
+td{padding:6px 8px;border-bottom:1px solid #33415530;vertical-align:middle}
+tr.dr:hover td{background:#0f172a40;cursor:pointer}
+tr.exp td{background:#0f172a60!important}
+tr.ar td{padding:3px 8px 8px;background:#0f172a40}
+.mo{font-family:monospace}.trsm{font-size:11px}.cc{text-align:center}
+small{color:#94a3b8}
+.empty{text-align:center;color:#94a3b8;padding:24px}
+/* bulk */
+.bulk{display:flex;align-items:center;gap:8px;padding:8px 16px;
+  background:#0f172a;border-top:1px solid #334155;font-size:12px;flex-wrap:wrap;flex-shrink:0}
+.bulk span{color:#94a3b8}
+/* form */
+.scrl{flex:1;overflow-y:auto}
+.form{padding:16px;display:flex;flex-direction:column;gap:12px;max-width:520px;margin:0 auto}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#94a3b8}
+input,select{padding:8px 10px;border-radius:6px;border:1px solid #334155;
+  background:#0f172a;color:#f1f5f9;font-size:14px}
+input:focus,select:focus{outline:2px solid #0ea5e9;border-color:transparent}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ir{display:flex;gap:8px}.ir input{flex:1}
+.mhd{padding:8px 12px;border-radius:6px;background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80;font-size:13px}
+.err{padding:8px 12px;border-radius:6px;background:#ef44441a;border:1px solid #ef444435;color:#f87171;font-size:13px}
+.sbtn{width:100%;padding:11px;border-radius:7px;border:none;background:#0ea5e9;
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+.sbtn:hover{background:#0284c7}.sbtn:disabled{opacity:.55;cursor:default}
+/* action buttons */
+.abtn{padding:4px 12px;border-radius:5px;border:1px solid #0ea5e9;
+  background:#0ea5e918;color:#0ea5e9;cursor:pointer;font-size:12px}
+.abtn:hover{background:#0ea5e935}
+.abtn.sm{padding:2px 8px;font-size:11px}
+.abtn.sec{border-color:#334155;color:#94a3b8;background:none}
+.abtn.sec:hover{background:#334155}
+/* withdraw */
+.wd{padding:16px}.wdt{font-size:15px;font-weight:600;margin-bottom:10px}
+.wdr{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #33415528;font-size:13px}
+.wdr span:first-child{color:#94a3b8}
+.fa{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+/* settings */
+.stabs{display:flex;border-bottom:1px solid #334155;flex-shrink:0}
+.stab{flex:1;padding:9px;background:none;border:none;border-bottom:2px solid transparent;
+  cursor:pointer;color:#94a3b8;font-size:13px}
+.stab.act{color:#0ea5e9;border-bottom-color:#0ea5e9}
+.stitle{font-size:13px;font-weight:600;color:#94a3b8}
+.slist{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:2px}
+.srow{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #33415530}
+.sinfo{flex:1;min-width:0}
+.sname{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{font-size:11px;color:#94a3b8;margin-top:1px}
+.sadd{padding:8px 16px 16px;flex-shrink:0}
+/* misc */
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:15px}
+.errpage{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;height:100%;color:#f87171;font-size:15px}
+.errpage button{padding:9px 22px;border-radius:6px;border:none;background:#0ea5e9;color:#fff;cursor:pointer;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">FreezeKeeper lädt…</div></div>
+<script>
+// ── Helpers ───────────────────────────────────────────────────────────────
+function _esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function _fmtS(iso){if(!iso)return'';const d=new Date(iso);return`${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}.${String(d.getUTCFullYear()).slice(2)}`}
+function _fmtD(d){return`${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`}
+function _addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
+function _wdRow(l,v){return`<div class="wdr"><span>${l}</span><span>${_esc(String(v))}</span></div>`}
+function _emptyForm(){return{description:'',category_id:'',portions:1,package_total:1,freezer_unit:'',frozen_date:new Date().toISOString().slice(0,10)}}
+function _toId(name){return name.toLowerCase().replace(/[äöüß]/g,c=>({ä:'ae',ö:'oe',ü:'ue',ß:'ss'}[c]||c)).replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,40)||'item_'+Date.now()}
+
+// ── Auth / API ────────────────────────────────────────────────────────────
+function _token(){
+  try{const t=JSON.parse(localStorage.getItem('hassTokens')||'null');return t?.access_token||null}
+  catch{return null}
+}
+
+async function _api(method,path,body){
+  const tok=_token();
+  if(!tok){_authErr();return null}
+  const opts={method,headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'}};
+  if(body!==undefined)opts.body=JSON.stringify(body);
+  const r=await fetch(path,opts);
+  if(r.status===401){_authErr();return null}
+  if(!r.ok)throw new Error(`HTTP ${r.status}`);
+  if(r.status===204)return null;
+  return r.json();
+}
+
+async function _getSensor(){
+  const r=await _api('GET','/api/states/sensor.freezekeeper');
+  return r?.attributes||null;
+}
+
+async function _callSvc(svc,data={}){
+  return _api('POST',`/api/services/freezekeeper/${svc}`,data);
+}
+
+function _authErr(){
+  document.getElementById('app').innerHTML=
+    `<div class="errpage"><div>⚠ Nicht authentifiziert</div>
+    <button onclick="try{parent.location.href='/'}catch{location.href='/'}">Zur HA-Startseite</button></div>`;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+let _d=null;
+const _s={
+  view:'inventory',filter:'all',
+  sortCol:'mhd_min',sortDir:'asc',
+  colFilters:{},expandedId:null,selectedIds:new Set(),
+  form:_emptyForm(),withdrawInput:'',withdrawEntry:null,
+  loading:false,error:null,
+  settingsTab:'categories',editForm:null,
+};
+
+// ── Init / Load ───────────────────────────────────────────────────────────
+async function _init(){
+  const iv=sessionStorage.getItem('fk_view');
+  const fi=sessionStorage.getItem('fk_filter');
+  if(iv){_s.view=iv;sessionStorage.removeItem('fk_view')}
+  if(fi&&iv==='inventory'){_s.filter=fi;sessionStorage.removeItem('fk_filter')}
+  await _load();
+}
+
+async function _load(){
+  _d=await _getSensor();
+  _render();
+}
+
+async function _reload(ms=600){
+  await new Promise(r=>setTimeout(r,ms));
+  await _load();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function _render(){
+  const app=document.getElementById('app');
+  if(!_d){
+    app.innerHTML='<div class="loading">Sensor <code>sensor.freezekeeper</code> nicht gefunden</div>';
+    return;
+  }
+  const v=_s.view;
+  app.innerHTML=
+    v==='inventory'?_vInventory():
+    v==='add'      ?_vAdd():
+    v==='withdraw' ?_vWithdraw():
+    v==='settings' ?_vSettings():'';
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────────
+function _vInventory(){
+  const{sortCol,sortDir,colFilters,selectedIds,filter}=_s;
+  const lb={all:'Gesamtbestand',green:'haltbar 🟢',orange:'bald ablaufend 🟠',red:'abgelaufen 🔴'}[filter];
+  const COLS=[
+    {k:'id',l:'ID',w:'68px'},{k:'description',l:'Beschreibung',w:'auto'},
+    {k:'category_id',l:'Kategorie',w:'150px'},{k:'mhd_min',l:'MHD',w:'90px'},
+    {k:'traffic_light',l:'St.',w:'40px'},{k:'portions',l:'Port.',w:'50px'},
+    {k:'freezer_unit',l:'Einheit',w:'110px'},
+  ];
+  const thead=COLS.map(c=>{
+    const active=sortCol===c.k,arr=active?(sortDir==='asc'?'▲':'▼'):'⇅',fv=_esc(colFilters[c.k]||'');
+    return`<th style="width:${c.w}">
+      <button class="sh" data-a="sort" data-col="${c.k}">${c.l} <span>${arr}</span></button>
+      <input class="sf" data-col="${c.k}" value="${fv}" placeholder="…">
+    </th>`;
+  }).join('');
+  const rows=_inventoryRows();
+  const bulk=selectedIds.size?`<div class="bulk">
+    <span>${selectedIds.size} ausgewählt</span>
+    <button class="abtn" data-a="bulk-print">🖨 Etiketten drucken</button>
+    <button class="abtn sec" data-a="clear-sel">Aufheben</button>
+  </div>`:'';
+  return`
+    <div class="hdr">
+      <button class="ibtn" data-a="to-ha" title="Dashboard">←</button>
+      <span class="htitle">${lb}</span>
+      <button class="ibtn" data-a="to-add"      title="Neu einfrieren">＋</button>
+      <button class="ibtn" data-a="to-withdraw" title="Entnehmen">↑</button>
+      <button class="ibtn" data-a="to-settings" title="Einstellungen">⚙</button>
+      <button class="ibtn sm" data-a="clear-filters">✕ Filter</button>
+    </div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="ca"></th>
+          ${thead}
+        </tr></thead>
+        <tbody id="tbody">${rows}</tbody>
+      </table>
+    </div>
+    ${bulk}`;
+}
+
+function _inventoryRows(){
+  if(!_d)return`<tr><td colspan="9" class="empty">Keine Einträge</td></tr>`;
+  const cats=_d.categories||[],units=_d.freezer_units||[];
+  const{expandedId,selectedIds}=_s;
+  const entries=_filtered();
+  if(!entries.length)return`<tr><td colspan="9" class="empty">Keine Einträge</td></tr>`;
+  return entries.map(e=>{
+    const cat=(cats.find(c=>c.id===e.category_id)||{}).name||e.category_id;
+    const unit=(units.find(u=>u.id===e.freezer_unit)||{}).name||e.freezer_unit;
+    const tl={green:'🟢',orange:'🟠',red:'🔴'}[e.traffic_light]||'⚪';
+    const exp=expandedId===e.id,chk=selectedIds.has(e.id);
+    const ar=exp?`<tr class="ar"><td colspan="9">
+      <button class="abtn" data-a="withdraw-row" data-id="${e.id}">Entnehmen</button>
+      <button class="abtn" data-a="print-row" data-id="${e.id}">🖨 Etikett</button>
+      <button class="abtn sec" data-a="collapse">✕ Schließen</button>
+    </td></tr>`:'';
+    return`<tr class="dr${exp?' exp':''}" data-id="${e.id}">
+      <td><input type="checkbox" class="rc" data-id="${e.id}"${chk?' checked':''}></td>
+      <td class="mo">${String(e.id).padStart(6,'0')}</td>
+      <td>${_esc(e.description)}<br><small>${e.package_index}/${e.package_total}</small></td>
+      <td class="trsm">${_esc(cat)}</td>
+      <td class="trsm mo">${_fmtS(e.mhd_min)}</td>
+      <td class="cc">${tl}</td>
+      <td class="cc">${e.portions}</td>
+      <td class="trsm">${_esc(unit)}</td>
+    </tr>${ar}`;
+  }).join('');
+}
+
+// ── Neuaufnahme ───────────────────────────────────────────────────────────
+function _vAdd(){
+  const cats=(_d.categories||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  const units=(_d.freezer_units||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  const f=_s.form;
+  const catOpts=cats.map(c=>`<option value="${_esc(c.id)}"${f.category_id===c.id?' selected':''}>${_esc(c.name)}</option>`).join('');
+  const unitOpts=units.map(u=>`<option value="${_esc(u.id)}"${f.freezer_unit===u.id?' selected':''}>${_esc(u.name)}</option>`).join('');
+  let mhd='';
+  if(f.category_id&&f.frozen_date){
+    const cat=cats.find(c=>c.id===f.category_id);
+    if(cat){const base=new Date(f.frozen_date);mhd=`<div class="mhd">🟢 MHD: ${_fmtD(_addDays(base,cat.min_days))} – ${_fmtD(_addDays(base,cat.max_days))}</div>`}
+  }
+  const err=_s.error?`<div class="err">${_esc(_s.error)}</div>`:'';
+  const pkg=parseInt(f.package_total)||1;
+  return`
+    <div class="hdr">
+      <button class="ibtn" data-a="to-inv">←</button>
+      <span class="htitle">Neuaufnahme</span>
+    </div>
+    <div class="scrl"><form class="form" id="add-form">
+      ${err}
+      <label>Beschreibung
+        <input name="description" value="${_esc(f.description)}" required placeholder="z. B. Kichererbsen-Curry">
+      </label>
+      <label>Kategorie
+        <select name="category_id" required><option value="">– bitte wählen –</option>${catOpts}</select>
+      </label>
+      <div class="r2">
+        <label>Portionen<input name="portions" type="number" min="1" value="${f.portions}"></label>
+        <label>Packungen<input name="package_total" type="number" min="1" value="${pkg}"></label>
+      </div>
+      <label>Gefriereinheit
+        <select name="freezer_unit" required><option value="">– bitte wählen –</option>${unitOpts}</select>
+      </label>
+      <label>Einfrierdatum
+        <input name="frozen_date" type="date" value="${_esc(f.frozen_date)}">
+      </label>
+      ${mhd}
+      <button class="sbtn" type="submit"${_s.loading?' disabled':''}>
+        ${_s.loading?'Wird gespeichert…':`🖨 ${pkg} Etikett(en) drucken &amp; speichern`}
+      </button>
+    </form></div>`;
+}
+
+// ── Entnahme ──────────────────────────────────────────────────────────────
+function _vWithdraw(){
+  const e=_s.withdrawEntry,err=_s.error?`<div class="err">${_esc(_s.error)}</div>`:'';
+  const cats=_d.categories||[];
+  const detail=e?(()=>{
+    const cat=(cats.find(c=>c.id===e.category_id)||{}).name||e.category_id;
+    const tl={green:'🟢 noch haltbar',orange:'🟠 bald ablaufend',red:'🔴 abgelaufen'}[e.traffic_light]||'';
+    return`<div class="wd">
+      <div class="wdt">${_esc(e.description)}</div>
+      ${_wdRow('Kategorie',cat)}${_wdRow('Einheit',e.freezer_unit)}
+      ${_wdRow('Portionen',e.portions)}${_wdRow('Eingefroren',_fmtS(e.frozen_date))}
+      ${_wdRow('MHD',_fmtS(e.mhd_min)+' – '+_fmtS(e.mhd_max))}${_wdRow('Status',tl)}
+    </div>
+    <div class="fa">
+      <button class="sbtn" data-a="confirm-wd" data-id="${e.id}">✓ Entnahme buchen</button>
+      <button class="abtn sec" data-a="cancel-wd">✕ Abbrechen</button>
+    </div>`;
+  })()`:`<div class="scrl"><form class="form" id="wd-form">
+    ${err}
+    <label>Barcode-Nummer
+      <div class="ir">
+        <input name="wd_id" type="number" min="1" placeholder="ID eingeben" value="${_esc(_s.withdrawInput)}" autofocus>
+        <button class="ibtn lg" type="button" data-a="scan-hint" title="Kamera-Tipp">📷</button>
+      </div>
+    </label>
+    <button class="sbtn" type="submit">Suchen →</button>
+  </form></div>`;
+  return`
+    <div class="hdr">
+      <button class="ibtn" data-a="to-inv">←</button>
+      <span class="htitle">Entnahme</span>
+    </div>${detail}`;
+}
+
+// ── Einstellungen ─────────────────────────────────────────────────────────
+function _vSettings(){
+  const{settingsTab,editForm,error}=_s;
+  const cats=(_d.categories||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  const units=(_d.freezer_units||[]).slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+  const err=error?`<div class="err" style="margin:8px 16px">${_esc(error)}</div>`:'';
+  const hdr=`<div class="hdr"><button class="ibtn" data-a="to-inv">←</button><span class="htitle">Einstellungen</span></div>`;
+  if(editForm){
+    const d2=editForm.data,isNew=!editForm.id;
+    const body=editForm.type==='cat'
+      ?`<label>Name<input name="name" value="${_esc(d2.name)}" required placeholder="z. B. Rindfleisch (roh)"></label>
+         <div class="r2">
+           <label>Min. Tage<input name="min_days" type="number" min="1" value="${d2.min_days||''}"></label>
+           <label>Max. Tage<input name="max_days" type="number" min="1" value="${d2.max_days||''}"></label>
+         </div>`
+      :`<label>Name<input name="name" value="${_esc(d2.name)}" required placeholder="z. B. Gefriertruhe"></label>`;
+    return`${hdr}<div class="scrl"><form class="form" id="edit-form">
+      ${err}
+      <div class="stitle">${isNew?(editForm.type==='cat'?'Neue Kategorie':'Neue Gefriereinheit'):'Bearbeiten'}</div>
+      ${body}
+      <div class="r2">
+        <button class="sbtn" type="submit">${_s.loading?'Speichern…':'✓ Speichern'}</button>
+        <button class="abtn sec" type="button" data-a="cancel-edit" style="padding:11px">✕ Abbrechen</button>
+      </div>
+    </form></div>`;
+  }
+  const tabCat=settingsTab==='categories';
+  const list=tabCat
+    ?cats.map(c=>`<div class="srow">
+        <div class="sinfo"><div class="sname">${_esc(c.name)}</div><div class="smeta">${c.min_days}–${c.max_days} Tage</div></div>
+        <button class="abtn sm" data-a="edit-cat" data-id="${_esc(c.id)}">✎</button>
+        <button class="abtn sm sec" data-a="del-cat" data-id="${_esc(c.id)}">✕</button>
+      </div>`).join('')||'<div class="empty">Keine Kategorien</div>'
+    :units.map(u=>`<div class="srow">
+        <div class="sinfo"><div class="sname">${_esc(u.name)}</div></div>
+        <button class="abtn sm" data-a="edit-unit" data-id="${_esc(u.id)}">✎</button>
+        <button class="abtn sm sec" data-a="del-unit" data-id="${_esc(u.id)}">✕</button>
+      </div>`).join('')||'<div class="empty">Keine Gefriereinheiten</div>';
+  const addBtn=tabCat
+    ?`<button class="abtn" data-a="new-cat">＋ Kategorie</button>`
+    :`<button class="abtn" data-a="new-unit">＋ Gefriereinheit</button>`;
+  return`${hdr}
+    <div class="stabs">
+      <button class="stab${tabCat?' act':''}" data-a="settings-tab" data-tab="categories">Kategorien (${cats.length})</button>
+      <button class="stab${!tabCat?' act':''}" data-a="settings-tab" data-tab="units">Gefriereinheiten (${units.length})</button>
+    </div>
+    ${err}
+    <div class="slist">${list}</div>
+    <div class="sadd">${addBtn}</div>`;
+}
+
+// ── Events ────────────────────────────────────────────────────────────────
+function _onClick(e){
+  if(e.target.id==='ca'){_toggleAll(e.target.checked);return}
+  if(e.target.classList.contains('rc')){
+    const id=parseInt(e.target.dataset.id);
+    e.target.checked?_s.selectedIds.add(id):_s.selectedIds.delete(id);
+    return;
+  }
+  const btn=e.target.closest('[data-a]');
+  if(!btn){
+    const row=e.target.closest('tr.dr');
+    if(row)_toggleExpand(parseInt(row.dataset.id));
+    return;
+  }
+  const a=btn.dataset.a,id=btn.dataset.id??null;
+  switch(a){
+    case 'to-ha':        _toHA();break;
+    case 'to-inv':       _nav('inventory');break;
+    case 'to-add':       _nav('add');break;
+    case 'to-withdraw':  _nav('withdraw');break;
+    case 'to-settings':  _nav('settings');break;
+    case 'settings-tab': _s.settingsTab=btn.dataset.tab;_render();break;
+    case 'new-cat':      _s.editForm={type:'cat',id:null,data:{name:'',min_days:90,max_days:180}};_render();break;
+    case 'new-unit':     _s.editForm={type:'unit',id:null,data:{name:''}};_render();break;
+    case 'edit-cat': {const c=(_d.categories||[]).find(c=>c.id===id);if(c){_s.editForm={type:'cat',id:c.id,data:{...c}};_render();}break}
+    case 'edit-unit':{const u=(_d.freezer_units||[]).find(u=>u.id===id);if(u){_s.editForm={type:'unit',id:u.id,data:{...u}};_render();}break}
+    case 'del-cat':      _deleteCat(id);break;
+    case 'del-unit':     _deleteUnit(id);break;
+    case 'cancel-edit':  _s.editForm=null;_s.error=null;_render();break;
+    case 'sort':         _sort(btn.dataset.col);break;
+    case 'clear-filters':_s.colFilters={};_render();break;
+    case 'clear-sel':    _s.selectedIds.clear();_render();break;
+    case 'collapse':     _s.expandedId=null;_render();break;
+    case 'withdraw-row': _openWithdrawById(parseInt(id));break;
+    case 'confirm-wd':   _confirmWithdraw(parseInt(id));break;
+    case 'cancel-wd':    _s.withdrawEntry=null;_render();break;
+    case 'print-row':    _callPrint([parseInt(id)]);break;
+    case 'bulk-print':   _callPrint([..._s.selectedIds]);break;
+    case 'scan-hint':    alert('Direktscan: Nutze die native Kamera-App, um den QR-Code zu scannen — die Entnahme wird automatisch gebucht.');break;
+  }
+}
+
+function _onChange(e){
+  const el=e.target;
+  if(_s.view==='add'&&el.name){
+    _s.form[el.name]=el.value;
+    if(['category_id','frozen_date','package_total'].includes(el.name))_render();
+  }
+  if(_s.view==='settings'&&_s.editForm&&el.name)_s.editForm.data[el.name]=el.value;
+}
+
+function _onInput(e){
+  const el=e.target;
+  if(el.classList.contains('sf')){
+    _s.colFilters[el.dataset.col]=el.value;
+    const tbody=document.getElementById('tbody');
+    if(tbody)tbody.innerHTML=_inventoryRows();
+    return;
+  }
+  if(_s.view==='add'&&el.name)_s.form[el.name]=el.value;
+  if(_s.view==='settings'&&_s.editForm&&el.name)_s.editForm.data[el.name]=el.value;
+}
+
+function _onSubmit(e){
+  if(e.target.id==='add-form') _submitAdd();
+  if(e.target.id==='wd-form')  _lookupWithdraw();
+  if(e.target.id==='edit-form')_submitEdit();
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────
+function _toHA(){
+  try{
+    parent.history.back();
+  }catch{
+    try{parent.location.href='/lovelace'}catch{location.href='/lovelace'}
+  }
+}
+
+function _nav(view,filter){
+  _s.view=view;_s.error=null;
+  if(filter)_s.filter=filter;
+  if(view==='withdraw'){_s.withdrawEntry=null;_s.withdrawInput='';}
+  if(view==='add')_s.form=_emptyForm();
+  if(view==='settings')_s.editForm=null;
+  _render();
+}
+
+function _sort(col){
+  if(_s.sortCol===col)_s.sortDir=_s.sortDir==='asc'?'desc':'asc';
+  else{_s.sortCol=col;_s.sortDir='asc';}
+  _render();
+}
+
+function _toggleExpand(id){_s.expandedId=_s.expandedId===id?null:id;_render()}
+function _toggleAll(checked){const e=_filtered();if(checked)e.forEach(e=>_s.selectedIds.add(e.id));else _s.selectedIds.clear();_render()}
+function _openWithdrawById(id){const e=(_d.entries||[]).find(e=>e.id===id);if(e){_s.withdrawEntry=e;_s.view='withdraw';_s.error=null;_render();}}
+
+// ── Actions ───────────────────────────────────────────────────────────────
+async function _submitAdd(){
+  const f=_s.form;
+  if(!f.description||!f.category_id||!f.freezer_unit){_s.error='Bitte alle Pflichtfelder ausfüllen.';_render();return}
+  _s.loading=true;_s.error=null;_render();
+  try{
+    await _callSvc('add_entries',{
+      description:f.description,category_id:f.category_id,
+      portions:parseInt(f.portions),package_total:parseInt(f.package_total),
+      freezer_unit:f.freezer_unit,frozen_date:f.frozen_date,
+    });
+    _s.filter='all';
+    _nav('inventory');
+    _reload();
+  }catch(err){_s.error=String(err.message||err);}
+  _s.loading=false;_render();
+}
+
+async function _submitEdit(){
+  const ef=_s.editForm;if(!ef)return;
+  const d=ef.data;
+  if(!d.name){_s.error='Name erforderlich.';_render();return}
+  const id=ef.id||_toId(d.name);
+  _s.loading=true;_s.error=null;_render();
+  try{
+    if(ef.type==='cat'){
+      if(!d.min_days||!d.max_days){_s.error='Min/Max-Tage erforderlich.';_s.loading=false;_render();return}
+      await _callSvc('upsert_category',{id,name:d.name,min_days:parseInt(d.min_days),max_days:parseInt(d.max_days)});
+    }else{
+      await _callSvc('upsert_freezer_unit',{id,name:d.name});
+    }
+    _s.editForm=null;_s.error=null;
+  }catch(err){_s.error=String(err.message||err);}
+  _s.loading=false;_render();_reload();
+}
+
+async function _deleteCat(id){
+  const cat=(_d.categories||[]).find(c=>c.id===id);
+  if(!confirm(`Kategorie „${cat?cat.name:id}" löschen?`))return;
+  try{await _callSvc('delete_category',{id});_reload();}
+  catch(err){_s.error=String(err.message||err);_render();}
+}
+
+async function _deleteUnit(id){
+  const unit=(_d.freezer_units||[]).find(u=>u.id===id);
+  if(!confirm(`Gefriereinheit „${unit?unit.name:id}" löschen?`))return;
+  try{await _callSvc('delete_freezer_unit',{id});_reload();}
+  catch(err){_s.error=String(err.message||err);_render();}
+}
+
+function _lookupWithdraw(){
+  const el=document.querySelector('[name=wd_id]');
+  const id=parseInt(el?.value||'');
+  if(!id){_s.error='Bitte eine ID eingeben.';_render();return}
+  const entry=(_d.entries||[]).find(e=>e.id===id);
+  if(!entry){_s.error=`ID ${id} nicht im aktiven Bestand.`;_render();return}
+  _s.withdrawEntry=entry;_s.error=null;_render();
+}
+
+async function _confirmWithdraw(id){
+  _s.loading=true;_render();
+  try{
+    await _callSvc('withdraw',{id});
+    _s.filter='all';
+    _nav('inventory');
+    _reload();
+  }catch(err){_s.error=String(err.message||err);}
+  _s.loading=false;_render();
+}
+
+async function _callPrint(ids){
+  try{await _callSvc('print_labels',{ids});}
+  catch(err){alert('Druckfehler: '+(err.message||err));}
+}
+
+function _filtered(){
+  let list=(_d.entries||[]).slice();
+  const{filter,sortCol,sortDir,colFilters}=_s;
+  const cats=_d.categories||[],units=_d.freezer_units||[];
+  if(filter!=='all')list=list.filter(e=>e.traffic_light===filter);
+  for(const[col,val]of Object.entries(colFilters)){
+    if(!val)continue;const q=val.toLowerCase();
+    list=list.filter(e=>{
+      if(col==='id')          return String(e.id).includes(q);
+      if(col==='description') return e.description.toLowerCase().includes(q);
+      if(col==='category_id') return((cats.find(c=>c.id===e.category_id)||{}).name||'').toLowerCase().includes(q);
+      if(col==='freezer_unit')return((units.find(u=>u.id===e.freezer_unit)||{}).name||'').toLowerCase().includes(q);
+      if(col==='mhd_min')     return(e.mhd_min+e.mhd_max).includes(q);
+      if(col==='traffic_light')return e.traffic_light.startsWith(q);
+      if(col==='portions')    return String(e.portions).includes(q);
+      return true;
+    });
+  }
+  list.sort((a,b)=>{
+    let av=a[sortCol]??'',bv=b[sortCol]??'';
+    if(typeof av==='number')return sortDir==='asc'?av-bv:bv-av;
+    return sortDir==='asc'?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av));
+  });
+  return list;
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',_init);
+document.addEventListener('click',_onClick);
+document.addEventListener('change',_onChange);
+document.addEventListener('input',_onInput);
+document.addEventListener('submit',e=>{e.preventDefault();_onSubmit(e)});
+</script>
+</body>
+</html>
