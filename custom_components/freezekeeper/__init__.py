@@ -108,7 +108,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
     try:
         ll = hass.data.get("lovelace")
         if ll is not None:
-            resources = ll.get("resources")
+            resources = getattr(ll, "resources", None)
             if resources is not None and hasattr(resources, "async_create_item"):
                 items = await resources.async_get_info()
                 if not any(item.get("url") == url for item in items):
