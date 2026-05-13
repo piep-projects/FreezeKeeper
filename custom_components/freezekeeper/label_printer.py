@@ -145,8 +145,8 @@ def build_label_image(
         draw.text((PADDING, desc_y + i * desc_line_h), line, fill="black", font=font_desc)
 
     # ── Info-Tabelle mit Rahmen ───────────────────────────────
-    # Spalten: Eingefroren (18–248) | Portionen (248–418) | Kategorie (418–678)
-    col1_div, col2_div = 248, 418
+    # Spalten: Eingefroren (18–190) | Portionen (190–280) | Kategorie (280–678)
+    col1_div, col2_div = 190, 280
     draw.rectangle([(PADDING, table_y), (W - PADDING, table_bot)],
                    outline="black", width=2)
     draw.line([(PADDING, table_y + 33), (W - PADDING, table_y + 33)], fill="black", width=1)
@@ -154,12 +154,12 @@ def build_label_image(
     draw.line([(col2_div, table_y), (col2_div, table_bot)], fill="black", width=2)
 
     draw.text((26,  table_y + 6),  "Eingefroren", fill="black", font=font_hdr)
-    draw.text((256, table_y + 6),  "Portionen",   fill="black", font=font_hdr)
-    draw.text((426, table_y + 6),  "Kategorie",   fill="black", font=font_hdr)
+    draw.text((198, table_y + 6),  "Port.",        fill="black", font=font_hdr)
+    draw.text((288, table_y + 6),  "Kategorie",   fill="black", font=font_hdr)
 
     draw.text((26,  table_y + 44), entry.frozen_date.strftime("%d.%m.%Y"), fill="black", font=font_val)
-    draw.text((256, table_y + 44), str(entry.portions),                    fill="black", font=font_val)
-    draw.text((426, table_y + 44), category_name,                          fill="black", font=font_val)
+    draw.text((198, table_y + 44), str(entry.portions),                    fill="black", font=font_val)
+    draw.text((288, table_y + 44), category_name,                          fill="black", font=font_val)
 
     # ── Separator (Rahmenbreite) ─────────────────────────────
     draw.line([(4, sep_y), (W - 4, sep_y)], fill="black", width=2)
