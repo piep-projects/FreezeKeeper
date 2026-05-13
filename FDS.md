@@ -1,6 +1,6 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.3  
+**Version:** 0.4  
 **Datum:** 2026-05-13  
 **Status:** Entwurf
 
@@ -102,7 +102,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | ID | Anforderung |
 |----|-------------|
 | FA-05.1 | Etiketten werden auf dem Brother QL-820NWBc gedruckt (62 mm Endlosband). |
-| FA-05.2 | Jedes Etikett enthält: Titel „FreezeKeeper", ID (Klartext), Beschreibung, Kategorie, Portionen, Einfrierdatum, Gefriereinheit, Packungsnummer (x/y), „Verbrauchen bis" (MHD_min–MHD_max, rot gedruckt), QR-Code oben rechts. |
+| FA-05.2 | Jedes Etikett enthält: Titel „FreezeKeeper" mit ID, Beschreibung (groß, umgebrochen), Info-Tabelle (Eingefroren dd.mm.yy / Port. / Kategorie), „Verbrauchen bis" (MHD_min–MHD_max, rot), QR-Code rechts unten. |
 | FA-05.3 | Der QR-Code enthält die Webhook-URL zur direkten Entnahme-Buchung. |
 | FA-05.4 | Optional (konfigurierbar): zusätzlicher 1D-Barcode (Code 128) für Inventur mit dediziertem Handscanner. |
 | FA-05.5 | Etiketten-Nachdruck: Einzeln via inline Aktionsleiste in der Detailansicht; mehrere gleichzeitig via Checkbox-Mehrfachauswahl + Bulk-Druck. Nachgedruckte Etiketten sind identisch zum Original (gleiche ID, kein neuer Datensatz). |
@@ -207,9 +207,10 @@ GET  /api/webhook/{webhook_id}?id={ID}
 | HA Integration (Backend) | Python 3.11, Home Assistant Custom Component |
 | Dashboard-Widget | Vanilla JavaScript / Custom Elements (kein Framework) |
 | FreezeKeeper-Panel | Standalone HTML+CSS+JS SPA, HA iframe Panel |
-| Panel-Auth | `window.parent.document.querySelector('home-assistant').hass.auth.data.access_token` (primary), localStorage Fallback |
+| Panel-Auth / Services | `window.parent…hass` (States lesen, Services aufrufen); REST-Fallback für Druckauftrag |
 | Datenhaltung | HA Storage API (`.storage/freezekeeper.json`) |
 | Etikettendruck | `brother_ql` Python Library |
+| Schrift | DejaVuSans TTF (in Integration gebündelt, kein Systemfont erforderlich) |
 | QR-Code | `qrcode` Python Library |
 | 1D-Barcode (optional) | `python-barcode` Library |
 | Installation | HACS (empfohlen) oder manuell |

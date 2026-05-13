@@ -1,6 +1,6 @@
 # FreezeKeeper — Benutzerhandbuch
 
-**Version:** 0.3  
+**Version:** 0.4  
 **Sprache:** Deutsch
 
 > Installationsanleitung: siehe [README.md](README.md)
@@ -119,6 +119,16 @@ Tippe auf **„🖨 x Etikett(en) drucken & speichern"**.
 Jedes Etikett wird automatisch auf dem Brother QL-820NWBc gedruckt (62 mm Band).
 
 <img src="mockup_label_larger_font.svg" alt="Etikett-Mockup" width="420">
+
+### Inhalt
+
+| Bereich | Inhalt |
+|---------|--------|
+| Kopfzeile | „FreezeKeeper" + ID (z. B. `000042`) |
+| Beschreibung | Freitext, groß, bei Bedarf umgebrochen |
+| Info-Tabelle | Eingefroren (dd.mm.yy) · Port. · Kategorie |
+| Verbrauchen bis | MHD_min – MHD_max, rot gedruckt |
+| QR-Code | Direkt-Webhook zur Entnahme-Buchung |
 
 ### Was der QR-Code enthält
 
