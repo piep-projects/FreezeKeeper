@@ -1,0 +1,137 @@
+add_entries:
+  name: Einträge hinzufügen
+  description: Friert Lebensmittel ein und legt Datensätze an (ein Eintrag pro Packung).
+  fields:
+    description:
+      name: Beschreibung
+      description: Bezeichnung des Inhalts
+      required: true
+      example: "Kichererbsen-Curry mit Huhn"
+      selector:
+        text:
+    category_id:
+      name: Kategorie-ID
+      description: ID der Kategorie (aus get_config abrufbar)
+      required: true
+      example: "ready_poultry"
+      selector:
+        text:
+    portions:
+      name: Portionen
+      description: Anzahl Portionen pro Packung
+      required: true
+      example: 4
+      selector:
+        number:
+          min: 1
+          max: 100
+    package_total:
+      name: Anzahl Packungen
+      description: Wie viele gleichartige Packungen werden eingefroren
+      required: true
+      example: 3
+      selector:
+        number:
+          min: 1
+          max: 100
+    freezer_unit:
+      name: Gefriereinheit
+      description: ID der Gefriereinheit (aus get_config abrufbar)
+      required: true
+      example: "fridge_middle"
+      selector:
+        text:
+    frozen_date:
+      name: Einfrierdatum
+      description: ISO-Datum (JJJJ-MM-TT), Standard ist heute
+      required: false
+      example: "2026-05-11"
+      selector:
+        text:
+
+withdraw:
+  name: Entnahme buchen
+  description: Markiert einen Eintrag als entnommen.
+  fields:
+    id:
+      name: Eintrags-ID
+      description: Die auf dem Etikett aufgedruckte numerische ID
+      required: true
+      example: 42
+      selector:
+        number:
+          min: 1
+
+get_entries:
+  name: Einträge abrufen
+  description: Gibt alle aktiven Einträge mit Ampelstatus und Zähler zurück.
+
+get_config:
+  name: Konfiguration abrufen
+  description: Gibt alle Kategorien und Gefriereinheiten zurück.
+
+upsert_category:
+  name: Kategorie speichern
+  description: Legt eine neue Kategorie an oder aktualisiert eine bestehende.
+  fields:
+    id:
+      name: ID
+      description: Eindeutiger Slug (z. B. ready_poultry)
+      required: true
+      example: "my_category"
+      selector:
+        text:
+    name:
+      name: Anzeigename
+      required: true
+      example: "Meine Kategorie"
+      selector:
+        text:
+    min_days:
+      name: Haltbarkeit min (Tage)
+      required: true
+      example: 60
+      selector:
+        number:
+          min: 1
+    max_days:
+      name: Haltbarkeit max (Tage)
+      required: true
+      example: 90
+      selector:
+        number:
+          min: 1
+
+delete_category:
+  name: Kategorie löschen
+  fields:
+    id:
+      name: ID
+      required: true
+      selector:
+        text:
+
+upsert_freezer_unit:
+  name: Gefriereinheit speichern
+  fields:
+    id:
+      name: ID
+      required: true
+      example: "my_unit"
+      selector:
+        text:
+    name:
+      name: Anzeigename
+      required: true
+      example: "Tiefkühlschrank Keller"
+      selector:
+        text:
+
+delete_freezer_unit:
+  name: Gefriereinheit löschen
+  fields:
+    id:
+      name: ID
+      required: true
+      selector:
+        text:

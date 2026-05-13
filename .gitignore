@@ -1,0 +1,12 @@
+# macOS metadata
+.DS_Store
+._.DS_Store
+._*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+dist/
+*.egg-info/

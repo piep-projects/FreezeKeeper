@@ -1,0 +1,17 @@
+{
+  "domain": "freezekeeper",
+  "name": "FreezeKeeper",
+  "version": "0.1.0",
+  "documentation": "https://github.com/piep-projects/FreezeKeeper",
+  "requirements": [
+    "brother_ql>=0.9.4",
+    "qrcode[pil]>=7.4.2",
+    "pillow>=10.0.0",
+    "python-barcode>=0.15.1"
+  ],
+  "dependencies": ["webhook"],
+  "codeowners": ["@piep-projects"],
+  "iot_class": "local_push",
+  "config_flow": true,
+  "icon": "mdi:snowflake"
+}

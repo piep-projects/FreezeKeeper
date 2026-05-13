@@ -1,0 +1,46 @@
+{
+  "config": {
+    "step": {
+      "reconfigure": {
+        "title": "FreezeKeeper neu konfigurieren",
+        "data": {
+          "printer_url": "Drucker-URL",
+          "label_type": "Etikettenbreite",
+          "print_1d_barcode": "1D-Barcode drucken (für Handscanner)",
+          "ha_url": "Home Assistant Basis-URL (optional)"
+        }
+      },
+      "user": {
+        "title": "FreezeKeeper einrichten",
+        "description": "Konfiguriere die Verbindung zum Etikettendrucker.",
+        "data": {
+          "printer_url": "Drucker-URL",
+          "label_type": "Etikettenbreite",
+          "print_1d_barcode": "1D-Barcode drucken (für Handscanner)",
+          "ha_url": "Home Assistant Basis-URL (optional)"
+        },
+        "data_description": {
+          "printer_url": "z. B. tcp://192.168.1.100 oder usb://0x04f9:0x209b/000M6Z401370",
+          "label_type": "Empfohlen: 62 mm (DK-22205)",
+          "ha_url": "Nur nötig wenn HA-URL nicht automatisch erkannt wird, z. B. http://ha-test1.local:8123"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "FreezeKeeper ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Einstellungen",
+        "data": {
+          "printer_url": "Drucker-URL",
+          "label_type": "Etikettenbreite",
+          "print_1d_barcode": "1D-Barcode drucken (für Handscanner)",
+          "ha_url": "Home Assistant Basis-URL (optional)"
+        }
+      }
+    }
+  }
+}
