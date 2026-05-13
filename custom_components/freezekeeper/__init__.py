@@ -134,7 +134,10 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    await _deploy_lovelace_card(hass)
+    try:
+        await _deploy_lovelace_card(hass)
+    except Exception as exc:
+        _LOGGER.warning("FreezeKeeper: Lovelace-Karte konnte nicht deployed werden: %s", exc)
 
     store = FreezeKeeperStore(hass)
     await store.async_load()
