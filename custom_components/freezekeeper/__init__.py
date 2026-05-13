@@ -86,7 +86,7 @@ async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
 
     if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
         await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
-        _LOGGER.info("FreezeKeeper: %s nach www/ deployed", _CARD_JS)
+        _LOGGER.warning("FreezeKeeper: %s nach www/ deployed", _CARD_JS)
 
     add_extra_js_url(hass, _CARD_URL)
 
@@ -113,10 +113,12 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
                 items = await resources.async_get_info()
                 if not any(item.get("url") == url for item in items):
                     await resources.async_create_item({"res_type": "module", "url": url})
-                    _LOGGER.info("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
+                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
+                else:
+                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden")
                 return
     except Exception as exc:
-        _LOGGER.debug("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
+        _LOGGER.warning("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
 
     # Fallback: write directly to storage (takes effect after next HA restart)
     try:
@@ -124,11 +126,11 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
         data = await store.async_load() or {"items": []}
         items = data.setdefault("items", [])
         if any(item.get("url") == url for item in items):
-            _LOGGER.debug("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden")
+            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden")
             return
         items.append({"id": uuid.uuid4().hex, "res_type": "module", "url": url})
         await store.async_save(data)
-        _LOGGER.info("FreezeKeeper: Lovelace-Ressource in Storage geschrieben (wirkt nach HA-Neustart): %s", url)
+        _LOGGER.warning("FreezeKeeper: Lovelace-Ressource in Storage geschrieben (wirkt nach HA-Neustart): %s", url)
     except Exception as exc:
         _LOGGER.warning("FreezeKeeper: Lovelace-Ressource konnte nicht registriert werden: %s", exc)
 
