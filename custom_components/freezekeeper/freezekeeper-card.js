@@ -29,6 +29,25 @@ class FreezekeeperCard extends HTMLElement {
     this.addEventListener('change', e => this._onChange(e));
     this.addEventListener('input',  e => this._onInput(e));
     this.addEventListener('submit', e => { e.preventDefault(); this._onSubmit(e); });
+
+    // HA registers a keydown capture listener on document that opens Quick Search.
+    // A capture listener on window fires before document, so we can stop propagation
+    // there to prevent HA from intercepting keys typed in our inputs.
+    this._keyGuard = e => {
+      const t = e.target;
+      if (t && t.closest && t.closest('freezekeeper-card') &&
+          (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('keydown', this._keyGuard, true);
+  }
+
+  disconnectedCallback() {
+    if (this._keyGuard) {
+      window.removeEventListener('keydown', this._keyGuard, true);
+      this._keyGuard = null;
+    }
   }
 
   setConfig(config) {
