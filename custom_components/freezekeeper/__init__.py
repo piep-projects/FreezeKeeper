@@ -112,7 +112,8 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
             if resources is not None and hasattr(resources, "async_create_item"):
                 items = await resources.async_get_info()
                 if not any(item.get("url") == url for item in items):
-                    await resources.async_create_item({"type": "module", "url": url})
+                    # async_create_item expects "res_type" as API input, stores as "type"
+                    await resources.async_create_item({"res_type": "module", "url": url})
                     _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
                 else:
                     _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden")
@@ -120,7 +121,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
     except Exception as exc:
         _LOGGER.warning("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
 
-    # Fallback: write directly to storage (takes effect after next HA restart)
+    # Fallback: write directly to storage (storage format uses "type", not "res_type")
     try:
         store = Store(hass, 1, "lovelace_resources")
         data = await store.async_load() or {"items": []}
