@@ -48,6 +48,9 @@ input:focus,select:focus{outline:2px solid #0ea5e9;border-color:transparent}
 .ir{display:flex;gap:8px}.ir input{flex:1}
 .mhd{padding:8px 12px;border-radius:6px;background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80;font-size:13px}
 .err{padding:8px 12px;border-radius:6px;background:#ef44441a;border:1px solid #ef444435;color:#f87171;font-size:13px}
+.pmsg{padding:8px 12px;border-radius:6px;font-size:13px;margin:6px 16px 0}
+.pmsg.ok{background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80}
+.pmsg.er{background:#ef44441a;border:1px solid #ef444435;color:#f87171}
 .sbtn{width:100%;padding:11px;border-radius:7px;border:none;background:#0ea5e9;
   color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
 .sbtn:hover{background:#0284c7}.sbtn:disabled{opacity:.55;cursor:default}
@@ -153,7 +156,7 @@ const _s={
   sortCol:'mhd_min',sortDir:'asc',
   colFilters:{},expandedId:null,selectedIds:new Set(),
   form:_emptyForm(),withdrawInput:'',withdrawEntry:null,
-  loading:false,error:null,
+  loading:false,error:null,printMsg:null,
   settingsTab:'categories',editForm:null,
 };
 
@@ -221,6 +224,7 @@ function _vInventory(){
     <button class="abtn" data-a="bulk-print">🖨 Etiketten drucken</button>
     <button class="abtn sec" data-a="clear-sel">Aufheben</button>
   </div>`:'';
+  const pm=_s.printMsg?`<div class="pmsg ${_s.printMsg.ok?'ok':'er'}">${_esc(_s.printMsg.text)}</div>`:'';
   return`
     <div class="hdr">
       <button class="ibtn" data-a="to-ha" title="Dashboard">←</button>
@@ -230,6 +234,7 @@ function _vInventory(){
       <button class="ibtn" data-a="to-settings" title="Einstellungen">⚙</button>
       <button class="ibtn sm" data-a="clear-filters">✕ Filter</button>
     </div>
+    ${pm}
     <div class="tw">
       <table>
         <thead><tr>
@@ -438,7 +443,7 @@ function _onClick(e){
     case 'cancel-wd':    _s.withdrawEntry=null;_render();break;
     case 'print-row':    _callPrint([parseInt(id)]);break;
     case 'bulk-print':   _callPrint([..._s.selectedIds]);break;
-    case 'scan-hint':    alert('Direktscan: Nutze die native Kamera-App, um den QR-Code zu scannen — die Entnahme wird automatisch gebucht.');break;
+    case 'scan-hint':    _s.printMsg={text:'Direktscan: Nutze die native Kamera-App, um den QR-Code zu scannen — die Entnahme wird automatisch gebucht.',ok:true};_render();setTimeout(()=>{_s.printMsg=null;_render();},5000);break;
   }
 }
 
@@ -569,8 +574,23 @@ async function _confirmWithdraw(id){
 }
 
 async function _callPrint(ids){
-  try{await _callSvc('print_labels',{ids});}
-  catch(err){alert('Druckfehler: '+(err.message||err));}
+  const tok=_token();
+  if(!tok){_authErr();return;}
+  _s.printMsg={text:'🖨 Drucke …',ok:true};
+  _render();
+  try{
+    const r=await fetch('/api/services/freezekeeper/print_labels',
+      {method:'POST',
+       headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+       body:JSON.stringify({ids})});
+    if(!r.ok){const t=await r.text().catch(()=>'');throw new Error(`HTTP ${r.status}${t?' — '+t:''}`);}
+    _s.printMsg={text:`✓ ${ids.length} Etikett(en) an Drucker gesendet`,ok:true};
+    _render();
+    setTimeout(()=>{_s.printMsg=null;_render();},4000);
+  }catch(err){
+    _s.printMsg={text:'⚠ Druckfehler: '+(err.message||err),ok:false};
+    _render();
+  }
 }
 
 function _filtered(){
