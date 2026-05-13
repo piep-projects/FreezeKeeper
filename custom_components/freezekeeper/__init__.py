@@ -73,6 +73,7 @@ _CARD_URL = f"/local/{_CARD_JS}"
 
 async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
     from homeassistant.components.frontend import add_extra_js_url
+    from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 
     src = Path(__file__).parent / _CARD_JS
     if not src.exists():
@@ -87,11 +88,16 @@ async def _deploy_lovelace_card(hass: HomeAssistant) -> None:
         await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
         _LOGGER.info("FreezeKeeper: %s nach www/ deployed", _CARD_JS)
 
-    # Register via frontend extra module URLs
     add_extra_js_url(hass, _CARD_URL)
 
-    # Also register as Lovelace storage resource so it survives page reload
-    await _register_lovelace_resource(hass, _CARD_URL)
+    if hass.is_running:
+        # Integration reloaded while HA already running — register immediately
+        await _register_lovelace_resource(hass, _CARD_URL)
+    else:
+        # HA still starting up — defer until Lovelace is fully initialized
+        async def _on_started(_event) -> None:
+            await _register_lovelace_resource(hass, _CARD_URL)
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _on_started)
 
 
 async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
