@@ -1,6 +1,6 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.2  
+**Version:** 0.3  
 **Datum:** 2026-05-13  
 **Status:** Entwurf
 
@@ -23,27 +23,35 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 ## 2. System-Übersicht
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    Home Assistant                         │
-│                                                          │
-│  ┌─────────────────┐      ┌──────────────────────────┐   │
-│  │  Lovelace Card  │◄────►│  FreezeKeeper Integration │   │
-│  │  (Frontend UI)  │      │  (Python Custom Component)│   │
-│  └─────────────────┘      └──────────┬───────────────┘   │
-│                                      │                    │
-│                           ┌──────────▼───────────┐        │
-│                           │   .storage / JSON DB  │        │
-│                           └──────────────────────┘        │
-└──────────────────────────────┬───────────────────────────┘
-                               │
-               ┌───────────────┼──────────────┐
-               │               │              │
-    ┌──────────▼───┐  ┌────────▼──────┐  ┌───▼────────────┐
-    │ Brother      │  │ HA Webhook    │  │ Handy-Kamera   │
-    │ QL-820NWBc   │  │ /api/webhook/ │  │ (QR-Scan,      │
-    │ (Etiketten)  │  │ freezekeeper_ │  │ kein App-Start)│
-    └──────────────┘  │ withdraw      │  └────────────────┘
-                      └───────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      Home Assistant                           │
+│                                                              │
+│  ┌──────────────────┐   ┌──────────────────────────────────┐ │
+│  │  Lovelace Card   │   │  FreezeKeeper Panel              │ │
+│  │  (Dashboard-     │   │  /freezekeeper                   │ │
+│  │   Widget, r/o)   │   │  (iframe, volle UI)              │ │
+│  └────────┬─────────┘   └──────────────┬───────────────────┘ │
+│           │ navigate                   │ REST API             │
+│           └──────────────┐             │                      │
+│                          ▼             ▼                      │
+│                ┌──────────────────────────────────┐          │
+│                │  FreezeKeeper Integration         │          │
+│                │  (Python Custom Component)        │          │
+│                └──────────────────┬───────────────┘          │
+│                                   │                           │
+│                        ┌──────────▼──────────┐               │
+│                        │  .storage / JSON DB  │               │
+│                        └─────────────────────┘               │
+└───────────────────────────────────┬──────────────────────────┘
+                                    │
+                ┌───────────────────┼──────────────┐
+                │                   │              │
+     ┌──────────▼───┐  ┌────────────▼──────┐  ┌───▼────────────┐
+     │ Brother      │  │ HA Webhook        │  │ Handy-Kamera   │
+     │ QL-820NWBc   │  │ /api/webhook/     │  │ (QR-Scan,      │
+     │ (Etiketten)  │  │ freezekeeper_     │  │ kein App-Start)│
+     └──────────────┘  │ withdraw          │  └────────────────┘
+                       └───────────────────┘
 ```
 
 ---
@@ -76,7 +84,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 |----|-------------|
 | FA-03.1 | Das Dashboard-Widget zeigt vier Kreise: grün (noch haltbar), orange (im Verbrauchsfenster), rot (abgelaufen), schwarz (Gesamtanzahl). |
 | FA-03.2 | Die Zahlen in den Kreisen aktualisieren sich in Echtzeit bei jeder Bestandsänderung. |
-| FA-03.3 | Tap auf einen Kreis öffnet die Detailansicht, vorgefiltert nach der entsprechenden Ampelfarbe. |
+| FA-03.3 | Tap auf einen Kreis oder eine Schaltfläche im Dashboard-Widget navigiert zum FreezeKeeper-Panel, vorgefiltert nach der entsprechenden Ampelfarbe. |
 | FA-03.4 | Die Detailansicht zeigt alle Spalten: ID, Beschreibung, Kategorie, MHD, Status, Portionen, Gefriereinheit. |
 | FA-03.5 | Jede Spalte ist unabhängig sortierbar (aufsteigend/absteigend). |
 | FA-03.6 | Jede Spalte hat ein Freitext-Filterfeld direkt unter dem Spaltentitel. Die Tabelle wird sofort gefiltert, ohne die Seite neu zu laden (partielles DOM-Update, kein Fokusverlust). |
@@ -106,7 +114,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | FA-06.1 | Kategorien sind frei konfigurierbar: Name, Haltbarkeit min (Tage), Haltbarkeit max (Tage). |
 | FA-06.2 | Gefriereinheiten sind frei konfigurierbar: Name. |
 | FA-06.3 | Druckermodell, Etikettenbreite und 1D-Barcode-Option sind konfigurierbar. |
-| FA-06.4 | Die Konfiguration ist über das ⚙-Icon im Dashboard-Widget erreichbar. |
+| FA-06.4 | Die Konfiguration ist über das ⚙-Icon im Dashboard-Widget oder im Panel-Header erreichbar. Sie öffnet die Einstellungsansicht im FreezeKeeper-Panel. |
 | FA-06.5 | Die HA-Basis-URL (`ha_url`) ist optional konfigurierbar. Sie wird für die Webhook-URL im QR-Code verwendet und ist nur nötig, wenn HA die eigene URL nicht automatisch ermitteln kann (z. B. hinter einem Reverse Proxy oder in Docker ohne konfigurierte `external_url`/`internal_url`). Die automatische Erkennung versucht folgende Quellen in Reihenfolge: `ha_url` aus der Konfiguration → `external_url`/`internal_url` aus HA-Einstellungen → `get_url()` Helper → lokale IP via Socket. |
 
 ---
@@ -197,7 +205,9 @@ GET  /api/webhook/{webhook_id}?id={ID}
 | Komponente | Technologie |
 |------------|-------------|
 | HA Integration (Backend) | Python 3.11, Home Assistant Custom Component |
-| Frontend (Lovelace Card) | Vanilla JavaScript / Custom Elements (kein Framework) |
+| Dashboard-Widget | Vanilla JavaScript / Custom Elements (kein Framework) |
+| FreezeKeeper-Panel | Standalone HTML+CSS+JS SPA, HA iframe Panel |
+| Panel-Auth | `window.parent.document.querySelector('home-assistant').hass.auth.data.access_token` (primary), localStorage Fallback |
 | Datenhaltung | HA Storage API (`.storage/freezekeeper.json`) |
 | Etikettendruck | `brother_ql` Python Library |
 | QR-Code | `qrcode` Python Library |
@@ -211,16 +221,16 @@ GET  /api/webhook/{webhook_id}?id={ID}
 
 ### 8.1 HACS (empfohlen)
 
-FreezeKeeper ist als HACS-Integration veröffentlicht (`hacs.json` im Repository-Root). HACS installiert das `custom_components/freezekeeper/`-Verzeichnis inklusive der gebündelten Lovelace-Karte (`freezekeeper-card.js`).
+FreezeKeeper ist als HACS-Integration veröffentlicht (`hacs.json` im Repository-Root). HACS installiert das `custom_components/freezekeeper/`-Verzeichnis inklusive der gebündelten Dateien (`freezekeeper-card.js`, `freezekeeper-panel.html`).
 
-Beim ersten Start kopiert `__init__.py` die JS-Datei automatisch nach `config/www/` und registriert sie über `add_extra_js_url` im HA-Frontend — kein manueller Lovelace-Ressourcen-Schritt erforderlich.
+Beim ersten Start kopiert `__init__.py` beide Dateien automatisch nach `config/www/`. Die Lovelace-Ressource (`/local/freezekeeper-card.js`) und das Sidebar-Panel (`/freezekeeper`) werden automatisch registriert — kein manueller Schritt erforderlich.
 
 ### 8.2 Manuelle Installation
 
 1. `custom_components/freezekeeper/` → `config/custom_components/`
-2. `www/freezekeeper-card.js` → `config/www/`
+2. `www/freezekeeper-card.js` + `www/freezekeeper-panel.html` → `config/www/`
 3. Lovelace-Ressource registrieren: `/local/freezekeeper-card.js` (Typ: JavaScript-Modul)
-4. HA neu starten
+4. HA neu starten (Panel wird automatisch registriert)
 
 ### 8.3 Lovelace-Karte einbinden
 
@@ -228,13 +238,15 @@ Beim ersten Start kopiert `__init__.py` die JS-Datei automatisch nach `config/ww
 type: custom:freezekeeper-card
 ```
 
+Das FreezeKeeper-Panel erscheint automatisch in der HA-Seitenleiste (Schneeflocken-Icon).
+
 ---
 
 ## 10. Nicht-funktionale Anforderungen
 
 | Anforderung | Ziel |
 |-------------|------|
-| Responsivität | Lovelace Card funktioniert auf Mobil (390 px) und Desktop |
+| Responsivität | Dashboard-Widget und Panel funktionieren auf Mobil (390 px) und Desktop |
 | Offline | Kernfunktionen (Bestandsansicht, Erfassung) funktionieren ohne Internet |
 | Datensicherheit | Webhook nur im Heimnetz erreichbar (keine Auth-Token in der URL nötig bei Heimnetz-only) |
 | Erweiterbarkeit | Kategorien und Gefriereinheiten ohne Code-Änderung konfigurierbar |

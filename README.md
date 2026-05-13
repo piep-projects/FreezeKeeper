@@ -11,6 +11,7 @@ Home Assistant Custom Integration zur Verwaltung von Tiefkühlgut — mit automa
 - **Neuaufnahme** — Gefriergut erfassen, Etiketten drucken (inkl. QR-Code)
 - **Direktentnahme** — QR-Code auf dem Etikett mit der Handy-Kamera scannen, Entnahme wird sofort gebucht — ohne HA zu öffnen
 - **Ampel-Dashboard** — kompaktes Widget mit Echtzeit-Bestandszählung nach Haltbarkeitsstatus
+- **HA Panel** — vollständige UI als eigenes HA-Sidebar-Panel (`/freezekeeper`), isoliert von HA-Keyboard-Shortcuts
 - **Bestandsübersicht** — vollständige, filterbare und sortierbare Tabelle aller Einträge
 - **Ablaufwarnung** — automatischer Statuswechsel grün → orange → rot basierend auf min/max Haltbarkeit pro Kategorie
 - **Etiketten-Nachdruck** — Einzel- oder Bulk-Nachdruck direkt aus der Bestandsübersicht
@@ -70,7 +71,7 @@ Der QR-Code enthält eine Webhook-URL zur direkten Entnahme-Buchung per Handy-Ka
 5. Integration einrichten (siehe Schritt 5 unten)
 6. Karte zum Dashboard hinzufügen (siehe Schritt 6 unten)
 
-> Die Lovelace-Karte wird beim ersten Start automatisch nach `config/www/` kopiert und registriert — kein manueller Schritt nötig.
+> Beim ersten Start werden `freezekeeper-card.js` und `freezekeeper-panel.html` automatisch nach `config/www/` kopiert. Die Lovelace-Ressource und das Sidebar-Panel `/freezekeeper` werden automatisch registriert — kein manueller Schritt nötig.
 
 ---
 
@@ -172,7 +173,7 @@ Die FreezeKeeper-Karte erscheint nun im Dashboard.
 
 ## Status
 
-> In Betrieb — v0.1.0
+> In Betrieb — v0.2.3
 
 ---
 

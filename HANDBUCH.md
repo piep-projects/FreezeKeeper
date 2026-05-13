@@ -1,6 +1,6 @@
 # FreezeKeeper — Benutzerhandbuch
 
-**Version:** 0.2  
+**Version:** 0.3  
 **Sprache:** Deutsch
 
 > Installationsanleitung: siehe [README.md](README.md)
@@ -11,12 +11,13 @@
 
 1. [Übersicht](#1-übersicht)
 2. [Das Dashboard-Widget](#2-das-dashboard-widget)
-3. [Neuaufnahme — Gefriergut einfrieren](#3-neuaufnahme--gefriergut-einfrieren)
-4. [Etikett](#4-etikett)
-5. [Entnahme](#5-entnahme)
-6. [Bestandsübersicht](#6-bestandsübersicht)
-7. [Einstellungen](#7-einstellungen)
-8. [Ampellogik](#8-ampellogik)
+3. [Das FreezeKeeper-Panel](#3-das-freezekeeper-panel)
+4. [Neuaufnahme — Gefriergut einfrieren](#4-neuaufnahme--gefriergut-einfrieren)
+5. [Etikett](#5-etikett)
+6. [Entnahme](#6-entnahme)
+7. [Bestandsübersicht](#7-bestandsübersicht)
+8. [Einstellungen](#8-einstellungen)
+9. [Ampellogik](#9-ampellogik)
 
 ---
 
@@ -33,6 +34,13 @@ Einfrieren → Etikett drucken → Einlagern
                                      Entnahme in HA buchen
 ```
 
+FreezeKeeper besteht aus zwei Teilen:
+
+| Teil | Beschreibung |
+|------|-------------|
+| **Dashboard-Widget** | Kompakte Karte im HA-Dashboard — zeigt Ampelzähler, navigiert per Tippen zum Panel |
+| **FreezeKeeper-Panel** | Vollständige UI in der HA-Seitenleiste — alle Formulare, Tabellen und Einstellungen |
+
 ---
 
 ## 2. Das Dashboard-Widget
@@ -45,24 +53,36 @@ Das Widget zeigt dir auf einen Blick, wie es um deinen Gefriervorrat steht.
 
 | Farbe | Bedeutung | Tippen öffnet … |
 |-------|-----------|-----------------|
-| 🟢 Grün | Noch gut haltbar | Übersicht, gefiltert auf „haltbar" |
-| 🟠 Orange | Im Verbrauchsfenster — jetzt verbrauchen | Übersicht, gefiltert auf „bald ablaufend" |
-| 🔴 Rot | Haltbarkeit überschritten | Übersicht, gefiltert auf „abgelaufen" |
-| ⬛ Dunkel | Gesamtanzahl aller aktiven Packungen | Vollständige Übersicht |
+| 🟢 Grün | Noch gut haltbar | Panel, gefiltert auf „haltbar" |
+| 🟠 Orange | Im Verbrauchsfenster — jetzt verbrauchen | Panel, gefiltert auf „bald ablaufend" |
+| 🔴 Rot | Haltbarkeit überschritten | Panel, gefiltert auf „abgelaufen" |
+| ⬛ Dunkel | Gesamtanzahl aller aktiven Packungen | Panel, vollständige Übersicht |
 
 ### Schaltflächen oben rechts
 
 | Symbol | Funktion |
 |--------|----------|
-| **＋** | Neue Packung einfrieren (Neuaufnahme) |
-| **↑** | Packung entnehmen (manuelle ID-Eingabe) |
-| **⚙** | Einstellungen (Kategorien, Gefriereinheiten) |
+| **＋** | Öffnet das Panel — direkt zur Neuaufnahme |
+| **↑** | Öffnet das Panel — direkt zur Entnahme |
+| **⚙** | Öffnet das Panel — direkt zu den Einstellungen |
 
 ---
 
-## 3. Neuaufnahme — Gefriergut einfrieren
+## 3. Das FreezeKeeper-Panel
 
-Tippe auf **＋** im Dashboard, um eine neue Packung zu erfassen.
+Das Panel ist die vollständige FreezeKeeper-Oberfläche. Es öffnet sich:
+- automatisch, wenn du im Dashboard-Widget auf einen Kreis oder eine Schaltfläche tippst
+- oder direkt über das **Schneeflocken-Icon** in der HA-Seitenleiste
+
+Im Panel stehen alle Funktionen zur Verfügung: Bestandsübersicht, Neuaufnahme, Entnahme und Einstellungen.
+
+Mit **←** oben links kehrst du jederzeit zum HA-Dashboard zurück.
+
+---
+
+## 4. Neuaufnahme — Gefriergut einfrieren
+
+Tippe auf **＋** im Dashboard oder im Panel-Header, um eine neue Packung zu erfassen.
 
 ### Formularfelder
 
@@ -94,7 +114,7 @@ Tippe auf **„🖨 x Etikett(en) drucken & speichern"**.
 
 ---
 
-## 4. Etikett
+## 5. Etikett
 
 Jedes Etikett wird automatisch auf dem Brother QL-820NWBc gedruckt (62 mm Band).
 
@@ -110,7 +130,7 @@ Einzelne Etiketten oder mehrere gleichzeitig kannst du jederzeit aus der Bestand
 
 ---
 
-## 5. Entnahme
+## 6. Entnahme
 
 Es gibt zwei Wege, eine Packung als entnommen zu buchen:
 
@@ -123,9 +143,9 @@ Es gibt zwei Wege, eine Packung als entnommen zu buchen:
 
 > Du musst Home Assistant **nicht öffnen** und keine App starten.
 
-### Weg 2 — Manuelle Eingabe in HA
+### Weg 2 — Manuelle Eingabe im Panel
 
-1. Tippe auf **↑** im Dashboard.
+1. Tippe auf **↑** im Dashboard oder im Panel-Header.
 2. Gib die ID ein (6-stellige Zahl auf dem Etikett, z. B. `000042`).
 3. Die Packungsdetails werden angezeigt — prüfe, ob es die richtige ist.
 4. Tippe auf **„✓ Entnahme buchen"**.
@@ -138,9 +158,9 @@ Es gibt zwei Wege, eine Packung als entnommen zu buchen:
 
 ---
 
-## 6. Bestandsübersicht
+## 7. Bestandsübersicht
 
-Tippe auf einen der vier Kreise im Dashboard, um die Übersicht zu öffnen. Sie zeigt alle aktiven Packungen in einer Tabelle.
+Tippe auf einen der vier Kreise im Dashboard, um das Panel mit der gefilterten Übersicht zu öffnen. Sie zeigt alle aktiven Packungen in einer Tabelle.
 
 ### Spalten
 
@@ -190,9 +210,9 @@ Tippe auf eine Zeile, um die Aktionsleiste zu öffnen:
 
 ---
 
-## 7. Einstellungen
+## 8. Einstellungen
 
-Tippe auf **⚙** im Dashboard, um die Einstellungen zu öffnen.
+Tippe auf **⚙** im Dashboard oder im Panel-Header, um die Einstellungen zu öffnen.
 
 ### Kategorien
 
@@ -218,7 +238,7 @@ Gefriereinheiten beschreiben den Lagerort oder das Behältnis (z. B. „Gefriert
 
 ---
 
-## 8. Ampellogik
+## 9. Ampellogik
 
 Der Status jeder Packung wird täglich neu berechnet:
 
