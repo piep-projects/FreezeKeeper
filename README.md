@@ -173,7 +173,7 @@ Die FreezeKeeper-Karte erscheint nun im Dashboard.
 
 ## Artikel
 
-[FreezeKeeper — Tiefkühlverwaltung für Home Assistant](https://projects.v-online.me/freezekeeper-tiefkuhlverwaltung-fur-home-assistant/) — piep projects
+[FreezeKeeper — Tiefkühlverwaltung für Home Assistant](https://projects.v-online.me/projekt/freezekeeper/) — piep projects
 
 ---
 
