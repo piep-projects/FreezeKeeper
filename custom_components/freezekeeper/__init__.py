@@ -267,6 +267,12 @@ def _register_services(hass: HomeAssistant, store: FreezeKeeperStore) -> None:
     async def delete_freezer_unit(call: ServiceCall) -> None:
         await store.async_delete_freezer_unit(call.data["id"])
 
+    async def set_next_id(call: ServiceCall) -> None:
+        value = int(call.data["value"])
+        if value < 1:
+            raise ServiceValidationError("Startwert muss ≥ 1 sein.")
+        await store.async_set_next_id(value)
+
     hass.services.async_register(
         DOMAIN, "add_entries", add_entries,
         schema=vol.Schema({
@@ -349,4 +355,8 @@ def _register_services(hass: HomeAssistant, store: FreezeKeeperStore) -> None:
     hass.services.async_register(
         DOMAIN, "print_labels", print_labels,
         schema=vol.Schema({vol.Required("ids"): [vol.Coerce(int)]}),
+    )
+    hass.services.async_register(
+        DOMAIN, "set_next_id", set_next_id,
+        schema=vol.Schema({vol.Required("value"): vol.All(vol.Coerce(int), vol.Range(min=1))}),
     )

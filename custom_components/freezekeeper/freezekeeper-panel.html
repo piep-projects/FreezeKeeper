@@ -390,6 +390,7 @@ function _vSettings(){
   const addBtn=tabCat
     ?`<button class="abtn" data-a="new-cat">＋ Kategorie</button>`
     :`<button class="abtn" data-a="new-unit">＋ Gefriereinheit</button>`;
+  const nextId=_d.next_id??1;
   return`${hdr}
     <div class="stabs">
       <button class="stab${tabCat?' act':''}" data-a="settings-tab" data-tab="categories">Kategorien (${cats.length})</button>
@@ -397,7 +398,16 @@ function _vSettings(){
     </div>
     ${err}
     <div class="slist">${list}</div>
-    <div class="sadd">${addBtn}</div>`;
+    <div class="sadd">${addBtn}</div>
+    <div class="sadd" style="border-top:1px solid #33415560;padding-top:12px">
+      <div class="stitle" style="margin-bottom:8px">Zähler</div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <label style="flex:1;margin:0;font-size:12px;color:#94a3b8">Nächste ID
+          <input id="next-id-val" type="number" min="1" value="${_esc(String(nextId))}" style="margin-top:4px;width:100%">
+        </label>
+        <button class="abtn" data-a="save-next-id" style="flex-shrink:0;margin-bottom:1px">✓ Setzen</button>
+      </div>
+    </div>`;
 }
 
 // ── Events ────────────────────────────────────────────────────────────────
@@ -428,6 +438,7 @@ function _onClick(e){
     case 'edit-unit':{const u=(_d.freezer_units||[]).find(u=>u.id===id);if(u){_s.editForm={type:'unit',id:u.id,data:{...u}};_render();}break}
     case 'del-cat':      _deleteCat(id);break;
     case 'del-unit':     _deleteUnit(id);break;
+    case 'save-next-id': _submitNextId();break;
     case 'cancel-edit':  _s.editForm=null;_s.error=null;_render();break;
     case 'sort':         _sort(btn.dataset.col);break;
     case 'clear-filters':_s.colFilters={};_render();break;
@@ -532,6 +543,14 @@ async function _submitEdit(){
     _s.editForm=null;_s.error=null;
   }catch(err){_s.error=String(err.message||err);}
   _s.loading=false;_render();_reload();
+}
+
+async function _submitNextId(){
+  const el=document.getElementById('next-id-val');
+  const v=parseInt(el?.value||'');
+  if(!v||v<1){_s.error='Bitte eine gültige ID ≥ 1 eingeben.';_render();return}
+  try{await _callSvc('set_next_id',{value:v});_s.error=null;_reload();}
+  catch(err){_s.error=String(err.message||err);_render();}
 }
 
 async function _deleteCat(id){

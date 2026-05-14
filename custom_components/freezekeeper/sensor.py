@@ -40,6 +40,7 @@ class FreezeKeeperSensor(SensorEntity):
             "entries": [e.to_dict() for e in self._store.get_active_entries()],
             "categories": [c.to_dict() for c in self._store.get_categories()],
             "freezer_units": [u.to_dict() for u in self._store.get_freezer_units()],
+            "next_id": self._store.get_next_id(),
         }
 
     async def async_added_to_hass(self) -> None:

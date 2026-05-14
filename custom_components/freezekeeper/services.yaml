@@ -135,3 +135,16 @@ delete_freezer_unit:
       required: true
       selector:
         text:
+
+set_next_id:
+  name: Nächste ID setzen
+  description: Setzt den Zähler für die nächste vergebene Eintrags-ID.
+  fields:
+    value:
+      name: Wert
+      description: Startwert für die nächste ID (mind. 1)
+      required: true
+      example: 1000
+      selector:
+        number:
+          min: 1

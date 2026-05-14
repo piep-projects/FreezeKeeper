@@ -134,6 +134,13 @@ class FreezeKeeperStore:
 
     # ── Freezer Units ──────────────────────────────────────────────────────
 
+    def get_next_id(self) -> int:
+        return self._next_id
+
+    async def async_set_next_id(self, value: int) -> None:
+        self._next_id = value
+        await self._async_save()
+
     def get_freezer_units(self) -> list[FreezerUnit]:
         return list(self._freezer_units.values())
 
