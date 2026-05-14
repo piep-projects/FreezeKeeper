@@ -1,7 +1,7 @@
 {
   "domain": "freezekeeper",
   "name": "FreezeKeeper",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "documentation": "https://github.com/piep-projects/FreezeKeeper",
   "requirements": [
     "brother_ql>=0.9.4",
