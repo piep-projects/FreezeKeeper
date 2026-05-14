@@ -1,6 +1,6 @@
 # FreezeKeeper — Benutzerhandbuch
 
-**Version:** 0.4  
+**Version:** 0.5  
 **Sprache:** Deutsch
 
 > Installationsanleitung: siehe [README.md](README.md)
@@ -16,7 +16,7 @@
 5. [Etikett](#5-etikett)
 6. [Entnahme](#6-entnahme)
 7. [Bestandsübersicht](#7-bestandsübersicht)
-8. [Einstellungen](#8-einstellungen)
+8. [Einstellungen](#8-einstellungen) (Kategorien, Gefriereinheiten, Zähler)
 9. [Ampellogik](#9-ampellogik)
 
 ---
@@ -126,8 +126,8 @@ Jedes Etikett wird automatisch auf dem Brother QL-820NWBc gedruckt (62 mm Band).
 |---------|--------|
 | Kopfzeile | „FreezeKeeper" + ID (z. B. `000042`) |
 | Beschreibung | Freitext, groß, bei Bedarf umgebrochen |
-| Info-Tabelle | Eingefroren (dd.mm.yy) · Port. · Kategorie |
-| Verbrauchen bis | MHD_min – MHD_max, rot gedruckt |
+| Info-Tabelle | Eingefroren (dd/mm/yy) · Port. · Kategorie |
+| Verbrauchen bis | MHD_min – MHD_max (dd/mm/yy), rot gedruckt |
 | QR-Code | Direkt-Webhook zur Entnahme-Buchung |
 
 ### Was der QR-Code enthält
@@ -243,6 +243,18 @@ Kategorien legen fest, wie lange ein Lebensmittel im Tiefkühler haltbar ist. Be
 Gefriereinheiten beschreiben den Lagerort oder das Behältnis (z. B. „Gefriertruhe", „Kühlschrank Eisfach"). Sie helfen dir, die Packungen räumlich zuzuordnen.
 
 **Neue Einheit anlegen:** Tippe auf **„＋ Gefriereinheit"**.
+
+### Zähler
+
+Am unteren Ende der Einstellungsseite befindet sich der Abschnitt **Zähler**. Hier kannst du festlegen, welche ID die nächste neu angelegte Packung erhalten soll.
+
+| Feld | Bedeutung |
+|------|-----------|
+| **Nächste ID** | Startwert für den ID-Zähler — die nächste Packung bekommt diese Nummer |
+
+**Anwendungsfall:** Wenn du z. B. nach einem Neustart mit ID 1000 weiterzählen möchtest, trage dort `1000` ein und tippe auf **„✓ Setzen"**.
+
+> Die Einstellung gilt sofort — bereits bestehende Einträge werden nicht verändert.
 
 > **Hinweis:** Druckermodell, Etikettenbreite und weitere technische Einstellungen werden einmalig bei der Installation in Home Assistant konfiguriert (Einstellungen → Geräte & Dienste → FreezeKeeper → Konfigurieren).
 

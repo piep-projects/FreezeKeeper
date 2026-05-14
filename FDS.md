@@ -1,7 +1,7 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.4  
-**Datum:** 2026-05-13  
+**Version:** 0.5  
+**Datum:** 2026-05-14  
 **Status:** Entwurf
 
 ---
@@ -102,7 +102,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | ID | Anforderung |
 |----|-------------|
 | FA-05.1 | Etiketten werden auf dem Brother QL-820NWBc gedruckt (62 mm Endlosband). |
-| FA-05.2 | Jedes Etikett enthält: Titel „FreezeKeeper" mit ID, Beschreibung (groß, umgebrochen), Info-Tabelle (Eingefroren dd.mm.yy / Port. / Kategorie), „Verbrauchen bis" (MHD_min–MHD_max, rot), QR-Code rechts unten. |
+| FA-05.2 | Jedes Etikett enthält: Titel „FreezeKeeper" mit ID, Beschreibung (groß, umgebrochen), Info-Tabelle (Eingefroren dd/mm/yy / Port. / Kategorie), „Verbrauchen bis" (MHD_min–MHD_max im Format dd/mm/yy, rot), QR-Code rechts unten. |
 | FA-05.3 | Der QR-Code enthält die Webhook-URL zur direkten Entnahme-Buchung. |
 | FA-05.4 | Optional (konfigurierbar): zusätzlicher 1D-Barcode (Code 128) für Inventur mit dediziertem Handscanner. |
 | FA-05.5 | Etiketten-Nachdruck: Einzeln via inline Aktionsleiste in der Detailansicht; mehrere gleichzeitig via Checkbox-Mehrfachauswahl + Bulk-Druck. Nachgedruckte Etiketten sind identisch zum Original (gleiche ID, kein neuer Datensatz). |
@@ -116,6 +116,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | FA-06.3 | Druckermodell, Etikettenbreite und 1D-Barcode-Option sind konfigurierbar. |
 | FA-06.4 | Die Konfiguration ist über das ⚙-Icon im Dashboard-Widget oder im Panel-Header erreichbar. Sie öffnet die Einstellungsansicht im FreezeKeeper-Panel. |
 | FA-06.5 | Die HA-Basis-URL (`ha_url`) ist optional konfigurierbar. Sie wird für die Webhook-URL im QR-Code verwendet und ist nur nötig, wenn HA die eigene URL nicht automatisch ermitteln kann (z. B. hinter einem Reverse Proxy oder in Docker ohne konfigurierte `external_url`/`internal_url`). Die automatische Erkennung versucht folgende Quellen in Reihenfolge: `ha_url` aus der Konfiguration → `external_url`/`internal_url` aus HA-Einstellungen → `get_url()` Helper → lokale IP via Socket. |
+| FA-06.6 | Der ID-Zähler (`next_id`) ist über die Einstellungsansicht im Panel konfigurierbar. Der Benutzer kann einen Startwert (≥ 1) setzen — die nächste neu angelegte Packung erhält diese ID. Bereits bestehende Einträge werden nicht verändert. Der Zähler wird persistent gespeichert und ist im Sensor-Attribut `next_id` auslesbar. |
 
 ---
 

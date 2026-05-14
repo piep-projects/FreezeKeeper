@@ -15,7 +15,7 @@ Home Assistant Custom Integration zur Verwaltung von Tiefkühlgut — mit automa
 - **Bestandsübersicht** — vollständige, filterbare und sortierbare Tabelle aller Einträge
 - **Ablaufwarnung** — automatischer Statuswechsel grün → orange → rot basierend auf min/max Haltbarkeit pro Kategorie
 - **Etiketten-Nachdruck** — Einzel- oder Bulk-Nachdruck direkt aus der Bestandsübersicht
-- **Konfigurierbar** — Kategorien, Gefriereinheiten, Drucker-Einstellungen über das ⚙-Icon im Widget
+- **Konfigurierbar** — Kategorien, Gefriereinheiten, ID-Startwert und Drucker-Einstellungen über das ⚙-Icon im Widget
 
 <img src="mockup_dashboard_widget.svg" alt="Dashboard-Widget-Mockup" width="340">
 
@@ -173,7 +173,7 @@ Die FreezeKeeper-Karte erscheint nun im Dashboard.
 
 ## Status
 
-> In Betrieb — v0.2.9
+> In Betrieb — v0.2.12
 
 ---
 
