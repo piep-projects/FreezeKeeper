@@ -3,6 +3,9 @@
 ._.DS_Store
 ._*
 
+# WordPress integration (local working files, not versioned)
+wordpress/
+
 # Python
 __pycache__/
 *.pyc
