@@ -1,6 +1,6 @@
 # FreezeKeeper
 
-<img src="freezekeeper_icon.svg" alt="FreezeKeeper Icon" width="96" align="right">
+<img src="custom_components/freezekeeper/icon.svg" alt="FreezeKeeper Icon" width="96" align="right">
 
 Home Assistant Custom Integration zur Verwaltung von Tiefkühlgut — mit automatischer Haltbarkeitskontrolle und Etikettendruck über einen Brother QL-820NWBc.
 
@@ -179,7 +179,7 @@ Die FreezeKeeper-Karte erscheint nun im Dashboard.
 
 ## Status
 
-> In Betrieb — v0.2.12
+> In Betrieb — v0.2.20
 
 ---
 
