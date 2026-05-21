@@ -143,9 +143,13 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
             resources = getattr(ll, "resources", None)
             if resources is not None and hasattr(resources, "async_create_item"):
                 raw = await resources.async_get_info()
-                # Normalize: async_get_info() may return a dict, list of dicts, or list of objects
+                # Normalize: async_get_info() may return {id: resource_dict} or list
+                # When it's a dict, the key IS the id — inject it into the value so _res_id works
                 if isinstance(raw, dict):
-                    item_list = list(raw.values())
+                    item_list = [
+                        {"id": k, **v} if isinstance(v, dict) else v
+                        for k, v in raw.items()
+                    ]
                 else:
                     item_list = list(raw) if raw is not None else []
 

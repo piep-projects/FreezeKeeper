@@ -113,6 +113,14 @@ function _token(){
 
 // Call a service and return its response data
 async function _callSvcData(svc,data={}){
+  // Primary: WebSocket via hass connection (reliable inside HA panel)
+  const hass=_ha();
+  if(hass){
+    const res=await hass.connection.sendMessagePromise(
+      {type:'call_service',domain:'freezekeeper',service:svc,service_data:data,return_response:true});
+    return res?.response??res;
+  }
+  // Fallback: REST API
   const tok=_token();
   if(!tok){_authErr();return null}
   const r=await fetch(`/api/services/freezekeeper/${svc}`,
