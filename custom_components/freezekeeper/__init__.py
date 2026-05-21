@@ -88,7 +88,8 @@ async def _deploy_static_files(hass: HomeAssistant) -> None:
             _LOGGER.warning("FreezeKeeper: %s nicht gefunden", fname)
             continue
         dst = www / fname
-        if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
+        src_bytes = src.read_bytes()
+        if not dst.exists() or dst.read_bytes() != src_bytes:
             await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
             _LOGGER.warning("FreezeKeeper: %s nach www/ deployed", fname)
 
