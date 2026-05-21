@@ -134,15 +134,30 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
         if ll is not None:
             resources = getattr(ll, "resources", None)
             if resources is not None and hasattr(resources, "async_create_item"):
-                items = await resources.async_get_info()
-                if any(str(item.get("url", "")).split("?")[0] == base and item.get("url") == url for item in items):
+                raw = await resources.async_get_info()
+                # Normalize: async_get_info() may return a dict, list of dicts, or list of objects
+                if isinstance(raw, dict):
+                    item_list = list(raw.values())
+                else:
+                    item_list = list(raw) if raw is not None else []
+
+                def _res_url(item) -> str:
+                    if isinstance(item, dict):
+                        return item.get("url", "")
+                    return getattr(item, "url", "")
+
+                def _res_id(item):
+                    if isinstance(item, dict):
+                        return item.get("id")
+                    return getattr(item, "id", None)
+
+                if any(_res_url(i) == url for i in item_list):
                     _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden: %s", url)
                     return
-                # Remove outdated versions of our resource
-                for item in items:
-                    if str(item.get("url", "")).split("?")[0] == base and item.get("url") != url:
+                for item in item_list:
+                    if _res_url(item).split("?")[0] == base and _res_url(item) != url:
                         try:
-                            await resources.async_delete_item(item["id"])
+                            await resources.async_delete_item(_res_id(item))
                         except Exception:
                             pass
                 await resources.async_create_item({"res_type": "module", "url": url})
