@@ -75,23 +75,31 @@ _CARD_URL   = f"/local/{_CARD_JS}?v={_VERSION}"
 _PANEL_URL  = "/freezekeeper"
 
 
+def _deploy_file(src: Path, dst: Path) -> bool:
+    """Copy src to dst if content differs. Returns True if copied."""
+    src_bytes = src.read_bytes()
+    if dst.exists() and dst.read_bytes() == src_bytes:
+        return False
+    shutil.copy2(str(src), str(dst))
+    return True
+
+
 async def _deploy_static_files(hass: HomeAssistant) -> None:
     from homeassistant.components.frontend import add_extra_js_url
     from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 
     www = Path(hass.config.path("www"))
-    www.mkdir(exist_ok=True)
+    await hass.async_add_executor_job(lambda: www.mkdir(exist_ok=True))
 
     for fname in (_CARD_JS, _PANEL_HTML):
         src = Path(__file__).parent / fname
-        if not src.exists():
+        if not await hass.async_add_executor_job(src.exists):
             _LOGGER.warning("FreezeKeeper: %s nicht gefunden", fname)
             continue
         dst = www / fname
-        src_bytes = src.read_bytes()
-        if not dst.exists() or dst.read_bytes() != src_bytes:
-            await hass.async_add_executor_job(shutil.copy2, str(src), str(dst))
-            _LOGGER.warning("FreezeKeeper: %s nach www/ deployed", fname)
+        copied = await hass.async_add_executor_job(_deploy_file, src, dst)
+        if copied:
+            _LOGGER.info("FreezeKeeper: %s nach www/ deployed", fname)
 
     add_extra_js_url(hass, _CARD_URL)
 
@@ -117,7 +125,7 @@ def _register_panel(hass: HomeAssistant) -> None:
             config={"url": f"/local/{_PANEL_HTML}?v={_VERSION}"},
             require_admin=False,
         )
-        _LOGGER.warning("FreezeKeeper: Panel /freezekeeper registriert")
+        _LOGGER.info("FreezeKeeper: Panel /freezekeeper registriert")
     except ValueError:
         pass  # already registered (e.g. integration reloaded)
 
@@ -152,7 +160,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
                     return getattr(item, "id", None)
 
                 if any(_res_url(i) == url for i in item_list):
-                    _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits vorhanden: %s", url)
+                    _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereits vorhanden: %s", url)
                     return
                 for item in item_list:
                     if _res_url(item).split("?")[0] == base and _res_url(item) != url:
@@ -161,7 +169,7 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
                         except Exception:
                             pass
                 await resources.async_create_item({"res_type": "module", "url": url})
-                _LOGGER.warning("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
+                _LOGGER.info("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
                 # Also clean up any stale storage entries left by previous fallback runs
                 try:
                     store = Store(hass, 1, "lovelace_resources")
@@ -189,9 +197,9 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
         if not any(i.get("url") == url for i in data["items"]):
             data["items"].append({"id": uuid.uuid4().hex, "type": "module", "url": url})
             await store.async_save(data)
-            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource in Storage geschrieben: %s", url)
+            _LOGGER.info("FreezeKeeper: Lovelace-Ressource in Storage geschrieben: %s", url)
         else:
-            _LOGGER.warning("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden: %s", url)
+            _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereits im Storage vorhanden: %s", url)
     except Exception as exc:
         _LOGGER.warning("FreezeKeeper: Lovelace-Ressource konnte nicht registriert werden: %s", exc)
 
