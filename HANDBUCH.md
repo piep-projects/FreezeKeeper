@@ -1,6 +1,6 @@
 # FreezeKeeper — Benutzerhandbuch
 
-**Version:** 0.5  
+**Version:** 0.6  
 **Sprache:** Deutsch
 
 > Installationsanleitung: siehe [README.md](README.md)

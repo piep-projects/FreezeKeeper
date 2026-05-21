@@ -1,7 +1,7 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.5  
-**Datum:** 2026-05-14  
+**Version:** 0.6  
+**Datum:** 2026-05-21  
 **Status:** Entwurf
 
 ---
@@ -31,7 +31,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 │  │  (Dashboard-     │   │  /freezekeeper                   │ │
 │  │   Widget, r/o)   │   │  (iframe, volle UI)              │ │
 │  └────────┬─────────┘   └──────────────┬───────────────────┘ │
-│           │ navigate                   │ REST API             │
+│           │ navigate                   │ WebSocket/REST       │
 │           └──────────────┐             │                      │
 │                          ▼             ▼                      │
 │                ┌──────────────────────────────────┐          │
@@ -116,7 +116,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | FA-06.3 | Druckermodell, Etikettenbreite und 1D-Barcode-Option sind konfigurierbar. |
 | FA-06.4 | Die Konfiguration ist über das ⚙-Icon im Dashboard-Widget oder im Panel-Header erreichbar. Sie öffnet die Einstellungsansicht im FreezeKeeper-Panel. |
 | FA-06.5 | Die HA-Basis-URL (`ha_url`) ist optional konfigurierbar. Sie wird für die Webhook-URL im QR-Code verwendet und ist nur nötig, wenn HA die eigene URL nicht automatisch ermitteln kann (z. B. hinter einem Reverse Proxy oder in Docker ohne konfigurierte `external_url`/`internal_url`). Die automatische Erkennung versucht folgende Quellen in Reihenfolge: `ha_url` aus der Konfiguration → `external_url`/`internal_url` aus HA-Einstellungen → `get_url()` Helper → lokale IP via Socket. |
-| FA-06.6 | Der ID-Zähler (`next_id`) ist über die Einstellungsansicht im Panel konfigurierbar. Der Benutzer kann einen Startwert (≥ 1) setzen — die nächste neu angelegte Packung erhält diese ID. Bereits bestehende Einträge werden nicht verändert. Der Zähler wird persistent gespeichert und ist im Sensor-Attribut `next_id` auslesbar. |
+| FA-06.6 | Der ID-Zähler (`next_id`) ist über die Einstellungsansicht im Panel konfigurierbar. Der Benutzer kann einen Startwert (≥ 1) setzen — die nächste neu angelegte Packung erhält diese ID. Bereits bestehende Einträge werden nicht verändert. Der Zähler wird persistent gespeichert. |
 
 ---
 
@@ -208,7 +208,7 @@ GET  /api/webhook/{webhook_id}?id={ID}
 | HA Integration (Backend) | Python 3.11, Home Assistant Custom Component |
 | Dashboard-Widget | Vanilla JavaScript / Custom Elements (kein Framework) |
 | FreezeKeeper-Panel | Standalone HTML+CSS+JS SPA, HA iframe Panel |
-| Panel-Auth / Services | `window.parent…hass` (States lesen, Services aufrufen); REST-Fallback für Druckauftrag |
+| Panel-Auth / Services | `hass.connection.sendMessagePromise` (WebSocket, Services mit Response); `hass.callService` (Mutationen); REST-Fallback |
 | Datenhaltung | HA Storage API (`.storage/freezekeeper.json`) |
 | Etikettendruck | `brother_ql` Python Library |
 | Schrift | DejaVuSans TTF (in Integration gebündelt, kein Systemfont erforderlich) |
@@ -225,7 +225,20 @@ GET  /api/webhook/{webhook_id}?id={ID}
 
 FreezeKeeper ist als HACS-Integration veröffentlicht (`hacs.json` im Repository-Root). HACS installiert das `custom_components/freezekeeper/`-Verzeichnis inklusive der gebündelten Dateien (`freezekeeper-card.js`, `freezekeeper-panel.html`).
 
-Beim ersten Start kopiert `__init__.py` beide Dateien automatisch nach `config/www/`. Die Lovelace-Ressource (`/local/freezekeeper-card.js`) und das Sidebar-Panel (`/freezekeeper`) werden automatisch registriert — kein manueller Schritt erforderlich.
+Beim ersten Start kopiert `__init__.py` beide Dateien automatisch nach `config/www/` (Inhaltsvergleich — nur bei tatsächlicher Änderung). Die Lovelace-Ressource (`/local/freezekeeper-card.js`) und das Sidebar-Panel (`/freezekeeper`) werden automatisch registriert — kein manueller Schritt erforderlich.
+
+### 8.4 Sensor-Attribute
+
+`sensor.freezekeeper` liefert ausschließlich die Ampelzähler:
+
+| Attribut | Typ | Bedeutung |
+|----------|-----|-----------|
+| `green` | int | Anzahl noch haltbarer Packungen |
+| `orange` | int | Anzahl Packungen im Verbrauchsfenster |
+| `red` | int | Anzahl abgelaufener Packungen |
+| `total` | int | Gesamtanzahl aktiver Packungen |
+
+Vollständige Bestands- und Konfigurationsdaten sind über die Services `get_entries` und `get_config` abrufbar.
 
 ### 8.2 Manuelle Installation
 
