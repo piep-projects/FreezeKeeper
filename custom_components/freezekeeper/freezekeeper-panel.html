@@ -48,6 +48,9 @@ input:focus,select:focus{outline:2px solid #0ea5e9;border-color:transparent}
 .ir{display:flex;gap:8px}.ir input{flex:1}
 .mhd{padding:8px 12px;border-radius:6px;background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80;font-size:13px}
 .err{padding:8px 12px;border-radius:6px;background:#ef44441a;border:1px solid #ef444435;color:#f87171;font-size:13px}
+.pmsg{padding:8px 12px;border-radius:6px;font-size:13px;margin:6px 16px 0}
+.pmsg.ok{background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80}
+.pmsg.er{background:#ef44441a;border:1px solid #ef444435;color:#f87171}
 .sbtn{width:100%;padding:11px;border-radius:7px;border:none;background:#0ea5e9;
   color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
 .sbtn:hover{background:#0284c7}.sbtn:disabled{opacity:.55;cursor:default}
@@ -108,22 +111,16 @@ function _token(){
   return null;
 }
 
-// Read sensor attributes directly from parent hass (no HTTP, no auth needed)
-async function _getSensor(){
-  // Primary: read from in-memory hass state — works in all HA environments
-  const hass=_ha();
-  if(hass){
-    const state=hass.states['sensor.freezekeeper'];
-    if(state)return state.attributes;
-  }
-  // Fallback: REST API
+// Call a service and return its response data
+async function _callSvcData(svc,data={}){
   const tok=_token();
   if(!tok){_authErr();return null}
-  const r=await fetch('/api/states/sensor.freezekeeper',
-    {headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'}});
+  const r=await fetch(`/api/services/freezekeeper/${svc}`,
+    {method:'POST',headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+     body:JSON.stringify(data)});
   if(r.status===401){_authErr();return null}
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
-  return(await r.json())?.attributes||null;
+  return r.json();
 }
 
 // Call HA service — via hass.callService (primary) or REST API (fallback)
@@ -153,7 +150,7 @@ const _s={
   sortCol:'mhd_min',sortDir:'asc',
   colFilters:{},expandedId:null,selectedIds:new Set(),
   form:_emptyForm(),withdrawInput:'',withdrawEntry:null,
-  loading:false,error:null,
+  loading:false,error:null,printMsg:null,
   settingsTab:'categories',editForm:null,
 };
 
@@ -168,7 +165,8 @@ async function _init(){
 
 async function _load(){
   try{
-    _d=await _getSensor();
+    const[ed,cd]=await Promise.all([_callSvcData('get_entries'),_callSvcData('get_config')]);
+    _d={entries:ed?.entries||[],...(ed?.counts||{}),categories:cd?.categories||[],freezer_units:cd?.freezer_units||[]};
   }catch(e){
     document.getElementById('app').innerHTML=
       `<div class="errpage"><div>⚠ Ladefehler: ${_esc(e.message)}</div>
@@ -221,6 +219,7 @@ function _vInventory(){
     <button class="abtn" data-a="bulk-print">🖨 Etiketten drucken</button>
     <button class="abtn sec" data-a="clear-sel">Aufheben</button>
   </div>`:'';
+  const pm=_s.printMsg?`<div class="pmsg ${_s.printMsg.ok?'ok':'er'}">${_esc(_s.printMsg.text)}</div>`:'';
   return`
     <div class="hdr">
       <button class="ibtn" data-a="to-ha" title="Dashboard">←</button>
@@ -230,6 +229,7 @@ function _vInventory(){
       <button class="ibtn" data-a="to-settings" title="Einstellungen">⚙</button>
       <button class="ibtn sm" data-a="clear-filters">✕ Filter</button>
     </div>
+    ${pm}
     <div class="tw">
       <table>
         <thead><tr>
@@ -390,7 +390,6 @@ function _vSettings(){
   const addBtn=tabCat
     ?`<button class="abtn" data-a="new-cat">＋ Kategorie</button>`
     :`<button class="abtn" data-a="new-unit">＋ Gefriereinheit</button>`;
-  const nextId=_d.next_id??1;
   return`${hdr}
     <div class="stabs">
       <button class="stab${tabCat?' act':''}" data-a="settings-tab" data-tab="categories">Kategorien (${cats.length})</button>
@@ -398,16 +397,7 @@ function _vSettings(){
     </div>
     ${err}
     <div class="slist">${list}</div>
-    <div class="sadd">${addBtn}</div>
-    <div class="sadd" style="border-top:1px solid #33415560;padding-top:12px">
-      <div class="stitle" style="margin-bottom:8px">Zähler</div>
-      <div style="display:flex;gap:8px;align-items:flex-end">
-        <label style="flex:1;margin:0;font-size:12px;color:#94a3b8">Nächste ID
-          <input id="next-id-val" type="number" min="1" value="${_esc(String(nextId))}" style="margin-top:4px;width:100%">
-        </label>
-        <button class="abtn" data-a="save-next-id" style="flex-shrink:0;margin-bottom:1px">✓ Setzen</button>
-      </div>
-    </div>`;
+    <div class="sadd">${addBtn}</div>`;
 }
 
 // ── Events ────────────────────────────────────────────────────────────────
@@ -438,7 +428,6 @@ function _onClick(e){
     case 'edit-unit':{const u=(_d.freezer_units||[]).find(u=>u.id===id);if(u){_s.editForm={type:'unit',id:u.id,data:{...u}};_render();}break}
     case 'del-cat':      _deleteCat(id);break;
     case 'del-unit':     _deleteUnit(id);break;
-    case 'save-next-id': _submitNextId();break;
     case 'cancel-edit':  _s.editForm=null;_s.error=null;_render();break;
     case 'sort':         _sort(btn.dataset.col);break;
     case 'clear-filters':_s.colFilters={};_render();break;
@@ -449,7 +438,7 @@ function _onClick(e){
     case 'cancel-wd':    _s.withdrawEntry=null;_render();break;
     case 'print-row':    _callPrint([parseInt(id)]);break;
     case 'bulk-print':   _callPrint([..._s.selectedIds]);break;
-    case 'scan-hint':    alert('Direktscan: Nutze die native Kamera-App, um den QR-Code zu scannen — die Entnahme wird automatisch gebucht.');break;
+    case 'scan-hint':    _s.printMsg={text:'Direktscan: Nutze die native Kamera-App, um den QR-Code zu scannen — die Entnahme wird automatisch gebucht.',ok:true};_render();setTimeout(()=>{_s.printMsg=null;_render();},5000);break;
   }
 }
 
@@ -515,15 +504,11 @@ async function _submitAdd(){
   if(!f.description||!f.category_id||!f.freezer_unit){_s.error='Bitte alle Pflichtfelder ausfüllen.';_render();return}
   _s.loading=true;_s.error=null;_render();
   try{
-    const nextId=_d.next_id??1;
-    const pkg=parseInt(f.package_total)||1;
-    const ids=Array.from({length:pkg},(_,i)=>nextId+i);
     await _callSvc('add_entries',{
       description:f.description,category_id:f.category_id,
-      portions:parseInt(f.portions),package_total:pkg,
+      portions:parseInt(f.portions),package_total:parseInt(f.package_total),
       freezer_unit:f.freezer_unit,frozen_date:f.frozen_date,
     });
-    await _callSvc('print_labels',{ids});
     _s.filter='all';
     _nav('inventory');
     _reload();
@@ -547,14 +532,6 @@ async function _submitEdit(){
     _s.editForm=null;_s.error=null;
   }catch(err){_s.error=String(err.message||err);}
   _s.loading=false;_render();_reload();
-}
-
-async function _submitNextId(){
-  const el=document.getElementById('next-id-val');
-  const v=parseInt(el?.value||'');
-  if(!v||v<1){_s.error='Bitte eine gültige ID ≥ 1 eingeben.';_render();return}
-  try{await _callSvc('set_next_id',{value:v});_s.error=null;_reload();}
-  catch(err){_s.error=String(err.message||err);_render();}
 }
 
 async function _deleteCat(id){
@@ -592,8 +569,23 @@ async function _confirmWithdraw(id){
 }
 
 async function _callPrint(ids){
-  try{await _callSvc('print_labels',{ids});}
-  catch(err){alert('Druckfehler: '+(err.message||err));}
+  const tok=_token();
+  if(!tok){_authErr();return;}
+  _s.printMsg={text:'🖨 Drucke …',ok:true};
+  _render();
+  try{
+    const r=await fetch('/api/services/freezekeeper/print_labels',
+      {method:'POST',
+       headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+       body:JSON.stringify({ids})});
+    if(!r.ok){const t=await r.text().catch(()=>'');throw new Error(`HTTP ${r.status}${t?' — '+t:''}`);}
+    _s.printMsg={text:`✓ ${ids.length} Etikett(en) an Drucker gesendet`,ok:true};
+    _render();
+    setTimeout(()=>{_s.printMsg=null;_render();},4000);
+  }catch(err){
+    _s.printMsg={text:'⚠ Druckfehler: '+(err.message||err),ok:false};
+    _render();
+  }
 }
 
 function _filtered(){

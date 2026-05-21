@@ -111,22 +111,16 @@ function _token(){
   return null;
 }
 
-// Read sensor attributes directly from parent hass (no HTTP, no auth needed)
-async function _getSensor(){
-  // Primary: read from in-memory hass state — works in all HA environments
-  const hass=_ha();
-  if(hass){
-    const state=hass.states['sensor.freezekeeper'];
-    if(state)return state.attributes;
-  }
-  // Fallback: REST API
+// Call a service and return its response data
+async function _callSvcData(svc,data={}){
   const tok=_token();
   if(!tok){_authErr();return null}
-  const r=await fetch('/api/states/sensor.freezekeeper',
-    {headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'}});
+  const r=await fetch(`/api/services/freezekeeper/${svc}`,
+    {method:'POST',headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+     body:JSON.stringify(data)});
   if(r.status===401){_authErr();return null}
   if(!r.ok)throw new Error(`HTTP ${r.status}`);
-  return(await r.json())?.attributes||null;
+  return r.json();
 }
 
 // Call HA service — via hass.callService (primary) or REST API (fallback)
@@ -171,7 +165,8 @@ async function _init(){
 
 async function _load(){
   try{
-    _d=await _getSensor();
+    const[ed,cd]=await Promise.all([_callSvcData('get_entries'),_callSvcData('get_config')]);
+    _d={entries:ed?.entries||[],...(ed?.counts||{}),categories:cd?.categories||[],freezer_units:cd?.freezer_units||[]};
   }catch(e){
     document.getElementById('app').innerHTML=
       `<div class="errpage"><div>⚠ Ladefehler: ${_esc(e.message)}</div>
