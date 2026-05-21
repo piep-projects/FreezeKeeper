@@ -32,7 +32,7 @@ class FreezekeeperCard extends HTMLElement {
       : '';
     this.innerHTML = _CSS + `<div class="card">
       <div class="header">
-        <span class="title">🧊 FreezeKeeper</span>
+        <span class="title"><span class="fk-icon">❄️</span> FreezeKeeper</span>
         <button class="ibtn" data-a="add"      title="Neu einfrieren">＋</button>
         <button class="ibtn" data-a="withdraw" title="Entnehmen">↑</button>
         <button class="ibtn" data-a="settings" title="Einstellungen">⚙</button>
@@ -86,6 +86,7 @@ freezekeeper-card .header{display:flex;align-items:center;gap:6px;padding:10px 1
   border-bottom:1px solid var(--divider-color,#334155);
   background:linear-gradient(90deg,#0ea5e918 0%,transparent 100%)}
 freezekeeper-card .title{flex:1;font-weight:600;font-size:15px}
+freezekeeper-card .fk-icon{filter:sepia(1) saturate(8) hue-rotate(185deg);font-style:normal}
 freezekeeper-card .ibtn{background:none;border:none;cursor:pointer;
   color:var(--secondary-text-color,#94a3b8);font-size:17px;padding:3px 5px;border-radius:5px;line-height:1}
 freezekeeper-card .ibtn:hover{background:var(--divider-color,#334155);color:var(--primary-text-color,#f1f5f9)}
