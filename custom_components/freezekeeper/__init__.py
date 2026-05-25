@@ -139,12 +139,19 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
     # Check storage first — EVENT_HOMEASSISTANT_STARTED fires before live resources
     # are populated, so async_get_info() may return an empty list even if the URL
     # is already stored. Reading storage directly avoids the duplicate.
+    # Also clean up stale versions from storage so they don't linger after upgrades.
     try:
         store = Store(hass, 1, "lovelace_resources")
         stored = await store.async_load() or {"items": []}
-        if any(i.get("url") == url for i in stored.get("items", [])):
+        items = stored.get("items", [])
+        if any(i.get("url") == url for i in items):
             _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereits im Storage: %s", url)
             return
+        # Remove stale versions of our card from storage
+        cleaned = [i for i in items if str(i.get("url", "")).split("?")[0] != base]
+        if len(cleaned) != len(items):
+            stored["items"] = cleaned
+            await store.async_save(stored)
     except Exception:
         pass
 
