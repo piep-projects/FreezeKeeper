@@ -104,10 +104,10 @@ async def _deploy_static_files(hass: HomeAssistant) -> None:
     add_extra_js_url(hass, _CARD_URL)
 
     if hass.is_running:
-        await _cleanup_lovelace_resources(hass)
+        await _register_lovelace_resource(hass, _CARD_URL)
     else:
         async def _on_started(_event) -> None:
-            await _cleanup_lovelace_resources(hass)
+            await _register_lovelace_resource(hass, _CARD_URL)
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _on_started)
 
 
@@ -128,50 +128,60 @@ def _register_panel(hass: HomeAssistant) -> None:
         pass  # already registered (e.g. integration reloaded)
 
 
-async def _cleanup_lovelace_resources(hass: HomeAssistant) -> None:
-    """Remove all FreezeKeeper card entries from the Lovelace resources manager.
-
-    The card is loaded via add_extra_js_url — the resources manager is not needed.
-    Cleaning up prevents stale entries from accumulating across upgrades.
-    """
+async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    import uuid
     from homeassistant.helpers.storage import Store
 
     base = f"/local/{_CARD_JS}"
 
-    # Remove from live resources manager
     try:
         ll = hass.data.get("lovelace")
         resources = getattr(ll, "resources", None) if ll is not None else None
-        if resources is not None and hasattr(resources, "async_get_info"):
+        if resources is not None and hasattr(resources, "async_create_item"):
             raw = await resources.async_get_info()
             if isinstance(raw, dict):
                 item_list = [{"id": k, **v} if isinstance(v, dict) else v
                              for k, v in raw.items()]
             else:
                 item_list = list(raw) if raw is not None else []
-            for item in item_list:
-                u = item.get("url", "") if isinstance(item, dict) else getattr(item, "url", "")
-                if u.split("?")[0] == base:
-                    rid = item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
-                    try:
-                        await resources.async_delete_item(rid)
-                        _LOGGER.info("FreezeKeeper: veraltete Lovelace-Ressource entfernt: %s", u)
-                    except Exception:
-                        pass
-    except Exception as exc:
-        _LOGGER.debug("FreezeKeeper: Ressourcen-Bereinigung (live) übersprungen: %s", exc)
 
-    # Remove from storage (catches entries the live manager may not have loaded yet)
+            def _res_url(item) -> str:
+                return item.get("url", "") if isinstance(item, dict) else getattr(item, "url", "")
+
+            def _res_id(item):
+                return item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
+
+            if any(_res_url(i) == url for i in item_list):
+                _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereits vorhanden: %s", url)
+                return
+
+            for item in item_list:
+                if _res_url(item).split("?")[0] == base and _res_url(item) != url:
+                    try:
+                        await resources.async_delete_item(_res_id(item))
+                        _LOGGER.info("FreezeKeeper: veraltete Ressource gelöscht: %s", _res_url(item))
+                    except Exception as exc:
+                        _LOGGER.warning("FreezeKeeper: Löschen fehlgeschlagen: %s", exc)
+
+            await resources.async_create_item({"res_type": "module", "url": url})
+            _LOGGER.info("FreezeKeeper: Lovelace-Ressource (live) registriert: %s", url)
+            return
+    except Exception as exc:
+        _LOGGER.warning("FreezeKeeper: Live-Registrierung fehlgeschlagen: %s", exc)
+
+    # Storage fallback (takes effect on next restart)
     try:
         store = Store(hass, 1, "lovelace_resources")
         data = await store.async_load() or {"items": []}
-        cleaned = [i for i in data.get("items", [])
-                   if str(i.get("url", "")).split("?")[0] != base]
-        if len(cleaned) != len(data.get("items", [])):
-            data["items"] = cleaned
+        items = [i for i in data.get("items", [])
+                 if str(i.get("url", "")).split("?")[0] != base]
+        if not any(i.get("url") == url for i in data.get("items", [])):
+            items.append({"id": uuid.uuid4().hex, "type": "module", "url": url})
+            data["items"] = items
             await store.async_save(data)
-    except Exception:
-        pass
+            _LOGGER.info("FreezeKeeper: Lovelace-Ressource (storage) registriert: %s", url)
+    except Exception as exc:
+        _LOGGER.warning("FreezeKeeper: Ressource konnte nicht registriert werden: %s", exc)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
