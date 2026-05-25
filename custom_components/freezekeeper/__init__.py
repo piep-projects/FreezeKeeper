@@ -136,6 +136,18 @@ async def _register_lovelace_resource(hass: HomeAssistant, url: str) -> None:
 
     base = f"/local/{_CARD_JS}"  # match all versions of our card URL
 
+    # Check storage first — EVENT_HOMEASSISTANT_STARTED fires before live resources
+    # are populated, so async_get_info() may return an empty list even if the URL
+    # is already stored. Reading storage directly avoids the duplicate.
+    try:
+        store = Store(hass, 1, "lovelace_resources")
+        stored = await store.async_load() or {"items": []}
+        if any(i.get("url") == url for i in stored.get("items", [])):
+            _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereits im Storage: %s", url)
+            return
+    except Exception:
+        pass
+
     # Try via live lovelace component (takes effect immediately)
     try:
         ll = hass.data.get("lovelace")
