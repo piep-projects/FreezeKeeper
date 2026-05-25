@@ -1,8 +1,8 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.6  
-**Datum:** 2026-05-21  
-**Status:** Entwurf
+**Version:** 0.7  
+**Datum:** 2026-05-25  
+**Status:** In Betrieb
 
 ---
 
