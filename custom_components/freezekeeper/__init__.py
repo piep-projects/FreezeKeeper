@@ -239,6 +239,7 @@ def _register_services(hass: HomeAssistant, store: FreezeKeeperStore) -> None:
         return {
             "categories": [c.to_dict() for c in store.get_categories()],
             "freezer_units": [u.to_dict() for u in store.get_freezer_units()],
+            "next_id": store.get_next_id(),
         }
 
     async def upsert_category(call: ServiceCall) -> None:
