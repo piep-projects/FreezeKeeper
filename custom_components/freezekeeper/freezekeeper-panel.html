@@ -424,6 +424,7 @@ function _onClick(e){
   if(e.target.classList.contains('rc')){
     const id=parseInt(e.target.dataset.id);
     e.target.checked?_s.selectedIds.add(id):_s.selectedIds.delete(id);
+    _render();
     return;
   }
   const btn=e.target.closest('[data-a]');
