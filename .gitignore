@@ -13,3 +13,6 @@ __pycache__/
 .venv/
 dist/
 *.egg-info/
+
+# Deploy credentials (never commit)
+scripts/deploy.local.env
