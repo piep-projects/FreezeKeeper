@@ -12,7 +12,7 @@ import voluptuous as vol
 _LOGGER = logging.getLogger(__name__)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 
 from .const import (
@@ -154,7 +154,8 @@ async def _cleanup_lovelace_resources(hass: HomeAssistant) -> None:
             return item.get("id") if isinstance(item, dict) else getattr(item, "id", None)
 
         for item in item_list:
-            if _res_url(item).split("?")[0] == base:
+            # Manually added resources may carry stray whitespace around the URL.
+            if _res_url(item).split("?")[0].strip() == base:
                 try:
                     await resources.async_delete_item(_res_id(item))
                     _LOGGER.info("FreezeKeeper: Lovelace-Ressource bereinigt: %s", _res_url(item))
@@ -204,6 +205,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unloaded:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unloaded
+
+
+def _print_error_message(exc: Exception, printer_url: str) -> str:
+    """Turn a print exception into a message the panel can show."""
+    detail = str(exc) or exc.__class__.__name__
+    if not printer_url:
+        return "Drucker-URL nicht konfiguriert (Einstellungen → Geräte & Dienste → FreezeKeeper)."
+    if isinstance(exc, OSError):  # covers ConnectionError, TimeoutError, socket errors
+        return f"Drucker nicht erreichbar ({printer_url}): {detail}"
+    return f"Etikettendruck fehlgeschlagen: {exc.__class__.__name__}: {detail}"
 
 
 def _register_services(hass: HomeAssistant, store: FreezeKeeperStore) -> None:
@@ -336,17 +347,22 @@ def _register_services(hass: HomeAssistant, store: FreezeKeeperStore) -> None:
         ha_url: str = entry_data.get(CONF_HA_URL, "")
         webhook_url_base = _build_webhook_url(hass, webhook_id, ha_url)
         from .label_printer import print_labels as _print
-        await hass.async_add_executor_job(
-            _print,
-            entries,
-            {c.id: c for c in store.get_categories()},
-            {u.id: u for u in store.get_freezer_units()},
-            printer_url,
-            label_type,
-            webhook_url_base,
-            webhook_id,
-            use_1d,
-        )
+        try:
+            await hass.async_add_executor_job(
+                _print,
+                entries,
+                {c.id: c for c in store.get_categories()},
+                {u.id: u for u in store.get_freezer_units()},
+                printer_url,
+                label_type,
+                webhook_url_base,
+                webhook_id,
+                use_1d,
+            )
+        except Exception as exc:
+            # Full traceback into the HA log, readable reason back to the caller.
+            _LOGGER.exception("FreezeKeeper: Etikettendruck fehlgeschlagen")
+            raise HomeAssistantError(_print_error_message(exc, printer_url)) from exc
 
     hass.services.async_register(
         DOMAIN, "print_labels", print_labels,

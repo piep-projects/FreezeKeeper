@@ -104,11 +104,15 @@ freezekeeper-card .hint{text-align:center;font-size:10px;
   color:var(--disabled-text-color,#475569);padding:4px 0 10px}
 </style>`;
 
-customElements.define('freezekeeper-card', FreezekeeperCard);
+// Guard against a double load (add_extra_js_url + a stale Lovelace resource):
+// a second define() would throw and break the card.
+if (!customElements.get('freezekeeper-card')) {
+  customElements.define('freezekeeper-card', FreezekeeperCard);
 
-window.customCards = window.customCards || [];
-window.customCards.push({
-  type: 'freezekeeper-card',
-  name: 'FreezeKeeper',
-  description: 'Tiefkühlverwaltung — Dashboard-Widget (volle UI im Panel)',
-});
+  window.customCards = window.customCards || [];
+  window.customCards.push({
+    type: 'freezekeeper-card',
+    name: 'FreezeKeeper',
+    description: 'Tiefkühlverwaltung — Dashboard-Widget (volle UI im Panel)',
+  });
+}

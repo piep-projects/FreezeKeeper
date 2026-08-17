@@ -48,7 +48,8 @@ input:focus,select:focus{outline:2px solid #0ea5e9;border-color:transparent}
 .ir{display:flex;gap:8px}.ir input{flex:1}
 .mhd{padding:8px 12px;border-radius:6px;background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80;font-size:13px}
 .err{padding:8px 12px;border-radius:6px;background:#ef44441a;border:1px solid #ef444435;color:#f87171;font-size:13px}
-.pmsg{padding:8px 12px;border-radius:6px;font-size:13px;margin:6px 16px 0}
+.pmsg{padding:8px 12px;border-radius:6px;font-size:13px;margin:6px 16px 0;
+  overflow-wrap:anywhere}
 .pmsg.ok{background:#22c55e1a;border:1px solid #22c55e35;color:#4ade80}
 .pmsg.er{background:#ef44441a;border:1px solid #ef444435;color:#f87171}
 .sbtn{width:100%;padding:11px;border-radius:7px;border:none;background:#0ea5e9;
@@ -600,22 +601,40 @@ async function _confirmWithdraw(id){
   _s.loading=false;_render();
 }
 
-async function _callPrint(ids){
+// WebSocket first — it carries the service's real error message.
+// REST only as fallback; its 500 body is HA's generic error page.
+async function _sendPrint(ids){
+  const hass=_ha();
+  if(hass){
+    await hass.connection.sendMessagePromise(
+      {type:'call_service',domain:'freezekeeper',service:'print_labels',service_data:{ids}});
+    return;
+  }
   const tok=_token();
-  if(!tok){_authErr();return;}
+  if(!tok){_authErr();throw new Error('Nicht authentifiziert')}
+  const r=await fetch('/api/services/freezekeeper/print_labels',
+    {method:'POST',
+     headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+     body:JSON.stringify({ids})});
+  if(!r.ok)throw new Error(`HTTP ${r.status} — Details im HA-Protokoll (Einstellungen → System → Protokolle)`);
+}
+
+function _errText(err){
+  if(!err)return 'Unbekannter Fehler';
+  if(typeof err==='string')return err;
+  return err.message||err.error?.message||JSON.stringify(err);
+}
+
+async function _callPrint(ids){
   _s.printMsg={text:'🖨 Drucke …',ok:true};
   _render();
   try{
-    const r=await fetch('/api/services/freezekeeper/print_labels',
-      {method:'POST',
-       headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
-       body:JSON.stringify({ids})});
-    if(!r.ok){const t=await r.text().catch(()=>'');throw new Error(`HTTP ${r.status}${t?' — '+t:''}`);}
+    await _sendPrint(ids);
     _s.printMsg={text:`✓ ${ids.length} Etikett(en) an Drucker gesendet`,ok:true};
     _render();
     setTimeout(()=>{_s.printMsg=null;_render();},4000);
   }catch(err){
-    _s.printMsg={text:'⚠ Druckfehler: '+(err.message||err),ok:false};
+    _s.printMsg={text:'⚠ Druckfehler: '+_errText(err),ok:false};
     _render();
   }
 }
