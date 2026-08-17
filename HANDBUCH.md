@@ -1,6 +1,6 @@
 # FreezeKeeper — Benutzerhandbuch
 
-**Version:** 0.7  
+**Version:** 0.8  
 **Sprache:** Deutsch
 
 > Installationsanleitung: siehe [README.md](README.md)
@@ -137,6 +137,19 @@ Der QR-Code enthält die direkte Webhook-URL dieser Packung. Wenn du ihn mit der
 ### Nachdruck
 
 Einzelne Etiketten oder mehrere gleichzeitig kannst du jederzeit aus der Bestandsübersicht nachdrucken (siehe Abschnitt 6).
+
+### Wenn der Druck fehlschlägt
+
+Klappt der Druck nicht, erscheint im Panel eine rote Meldung mit dem konkreten Grund — sie bleibt stehen, bis du etwas anderes tust.
+
+| Meldung | Bedeutung und was zu tun ist |
+|---------|------------------------------|
+| „Drucker nicht erreichbar (…): [Errno 113] Host is unreachable" | Der Drucker ist nicht im Netz — ausgeschaltet, im Ruhezustand oder aus dem WLAN gefallen. Prüfe, ob er eingeschaltet und angemeldet ist und ob die angezeigte Adresse noch stimmt. |
+| „Drucker nicht erreichbar (…): [Errno 111] Connection refused" | Die Adresse antwortet, aber nicht auf dem Druckerport. Meist hat ein anderes Gerät die IP übernommen — feste IP-Zuweisung im Router hilft dauerhaft. |
+| „Drucker-URL nicht konfiguriert" | In den Integrationseinstellungen fehlt die Adresse (Einstellungen → Geräte & Dienste → FreezeKeeper → Konfigurieren). |
+| „Etikettendruck fehlgeschlagen: …" | Sonstiger Fehler. Die vollständigen Details stehen im Protokoll unter Einstellungen → System → Protokolle. |
+
+> **Tipp:** Damit die Adresse des Druckers stabil bleibt, weise ihm im Router eine feste IP zu. Sonst kann er nach längerer Ausschaltzeit unter einer anderen Adresse auftauchen und der Druck schlägt fehl.
 
 ---
 

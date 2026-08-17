@@ -1,7 +1,7 @@
 # FreezeKeeper — Functional Design Specification
 
-**Version:** 0.7  
-**Datum:** 2026-05-31  
+**Version:** 0.8  
+**Datum:** 2026-08-17  
 **Status:** In Betrieb
 
 ---
@@ -106,6 +106,7 @@ Dieses Dokument beschreibt alle funktionalen Anforderungen, Datenstrukturen, UI-
 | FA-05.3 | Der QR-Code enthält die Webhook-URL zur direkten Entnahme-Buchung. |
 | FA-05.4 | Optional (konfigurierbar): zusätzlicher 1D-Barcode (Code 128) für Inventur mit dediziertem Handscanner. |
 | FA-05.5 | Etiketten-Nachdruck: Einzeln via inline Aktionsleiste in der Detailansicht; mehrere gleichzeitig via Checkbox-Mehrfachauswahl + Bulk-Druck. Nachgedruckte Etiketten sind identisch zum Original (gleiche ID, kein neuer Datensatz). |
+| FA-05.6 | Schlägt der Druck fehl, zeigt das Panel den tatsächlichen Grund im Klartext an (z. B. nicht erreichbarer Drucker inkl. konfigurierter Adresse, fehlende Drucker-URL). Der vollständige Traceback wird ins HA-Protokoll geschrieben. Der Druckaufruf läuft dafür über die WebSocket-Verbindung, da die REST-Schnittstelle von HA nur einen generischen HTTP-500-Fehler ohne Ursache liefert; REST bleibt Fallback und verweist dann aufs Protokoll. |
 
 ### 3.6 Konfiguration (FA-06)
 
@@ -189,7 +190,7 @@ GET  /api/webhook/{webhook_id}?id={ID}
 ### 6.2 Etikettendrucker
 
 - Bibliothek: `brother_ql` (Python)
-- Verbindung: WLAN (`tcp://`) oder USB
+- Verbindung: Netzwerk (`tcp://`, WLAN oder Ethernet) oder USB
 - Etikettenformat: 62 mm Endlos (`62`)
 - Druckmodus: Schwarz + Rot (QL-820NWBc unterstützt 2-Farb-Druck)
 
